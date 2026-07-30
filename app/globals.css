@@ -198,3 +198,57 @@ footer p { max-width: 85ch; margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* White editorial theme for the public review workspace. */
+html,
+body {
+  background: oklch(0.99 0.002 248);
+}
+
+.masthead {
+  padding-top: 32px;
+  padding-bottom: 28px;
+  background: var(--sheet);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+
+.masthead-mark {
+  background: oklch(0.97 0.008 248);
+  border-color: var(--line);
+  color: var(--navy);
+}
+
+.eyebrow,
+.privacy-seal strong {
+  color: var(--navy);
+}
+
+.lede,
+.privacy-seal span {
+  color: var(--muted);
+}
+
+.privacy-seal {
+  background: oklch(0.975 0.006 248);
+  border-color: var(--line);
+}
+
+.rule-strip {
+  background: oklch(0.97 0.008 248);
+  border-bottom: 1px solid var(--line);
+}
+
+.upload-block {
+  background: var(--sheet);
+}
+
+.action-deck {
+  background: oklch(0.965 0.012 248);
+}
+
+footer {
+  background: var(--sheet);
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
