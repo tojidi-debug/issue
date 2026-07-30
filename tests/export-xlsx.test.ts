@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import type { ReviewCandidate } from "../lib/domain";
 import { buildReviewWorkbook } from "../lib/export-xlsx";
 
@@ -46,3 +46,4 @@ it("creates 24년 and 25년 sheets with the review note column", () => {
   expect(rows[0]).toContain("비고(왜 확인해야 하는지)");
   expect(rows[1]).toContain("기장업무 여부 확인");
 });
+
