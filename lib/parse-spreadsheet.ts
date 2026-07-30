@@ -313,6 +313,10 @@ export async function parseSpreadsheet(
   const clients: AttestationClient[] = [];
 
   for (const sheetName of workbook.SheetNames) {
+    if (
+      role === "reference" &&
+      !/^(2-1\.|7-1_|choosecols$|Sheet2$)|수임신고|연결|종속|관계기업/i.test(sheetName)
+    ) continue;
     const rows = XLSX.utils.sheet_to_json<Row>(workbook.Sheets[sheetName], {
       header: 1,
       raw: true,
@@ -363,4 +367,5 @@ export async function parseSpreadsheet(
     amountTotal: transactions.reduce((sum, item) => sum + item.amount, 0),
   };
 }
+
 
