@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import type { AttestationClient, FileRole, ParsedFileResult, Transaction } from "./domain";
+import { inferYearFromRows, parseAdaptiveSalesRows } from "./adaptive-sales";
 import {
   cleanText,
   normalizeBusinessNumber,
@@ -63,7 +64,7 @@ function valueAt(row: Row, indexes: Record<string, number>, field: string): unkn
 
 export function parseSalesRows(rows: Row[], context: SalesRowContext): Transaction[] {
   const header = findHeader(rows);
-  if (!header) return [];
+  if (!header) return parseAdaptiveSalesRows(rows, context);
   const transactions: Transaction[] = [];
   for (let rowIndex = header.rowIndex + 1; rowIndex < rows.length; rowIndex += 1) {
     const row = rows[rowIndex];
@@ -291,7 +292,7 @@ export async function parseSpreadsheet(
 ): Promise<ParsedFileResult> {
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data, { type: "array", cellDates: true });
-  const year = detectYear(file.name, override.year);
+  const fileYear = detectYear(file.name, override.year);
   const transactions: Transaction[] = [];
   const clients: AttestationClient[] = [];
 
@@ -302,10 +303,16 @@ export async function parseSpreadsheet(
       raw: true,
       defval: "",
     });
-    if (role === "sales" && year) {
+    if (role === "sales") {
+      const sheetYear =
+        override.year ??
+        detectYear(sheetName) ??
+        fileYear ??
+        inferYearFromRows(rows);
+      if (!sheetYear) continue;
       const context = {
         accountant: override.accountant || sheetName,
-        year,
+        year: sheetYear,
         sourceFile: file.name,
         sheetName,
       };
@@ -322,12 +329,6 @@ export async function parseSpreadsheet(
   }
 
   const warnings: ParsedFileResult["warnings"] = [];
-  if (role === "sales" && !year) {
-    warnings.push({
-      code: "UNRECOGNIZED_LAYOUT",
-      message: "연도를 자동 인식하지 못했습니다. 2024년 또는 2025년을 지정하세요.",
-    });
-  }
   if ((role === "sales" ? transactions.length : clients.length) === 0) {
     warnings.push({
       code: "UNRECOGNIZED_LAYOUT",
@@ -340,7 +341,11 @@ export async function parseSpreadsheet(
     transactions,
     clients,
     warnings,
-    detectedYear: year,
+    detectedYear:
+      fileYear ??
+      (new Set(transactions.map((transaction) => transaction.year)).size === 1
+        ? transactions[0]?.year
+        : undefined),
     detectedAccountant: override.accountant,
     amountTotal: transactions.reduce((sum, item) => sum + item.amount, 0),
   };
