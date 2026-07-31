@@ -1,26 +1,10 @@
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import type { ReviewCandidate } from "./domain";
 
 const COLUMNS = [
-  "연도",
-  "위험도",
-  "인증대상 구분",
-  "매칭 회사",
-  "거래일자",
-  "전표번호",
-  "거래처",
-  "사업자(주민)번호",
-  "담당회계사",
-  "품명·적요",
-  "계정과목",
-  "공급가액",
-  "부가세",
-  "합계",
-  "용역분류",
-  "확인필요사항",
-  "매칭근거",
-  "인증근거",
-  "원본위치",
+  "연도", "위험도", "인증대상 구분", "매칭 회사", "거래일자", "전표번호", "거래처",
+  "사업자(주민)번호", "담당회계사", "품명·적요", "계정과목", "공급가액", "부가세",
+  "합계", "용역분류", "확인필요사항", "매칭근거", "인증근거", "원본위치",
   "비고(왜 확인해야 하는지)",
 ] as const;
 
@@ -49,12 +33,20 @@ function toExportRow(candidate: ReviewCandidate): Record<string, string | number
   };
 }
 
+function applyDefaultFont(sheet: XLSX.WorkSheet): void {
+  const range = XLSX.utils.decode_range(sheet["!ref"] ?? "A1:T1");
+  for (let row = range.s.r; row <= range.e.r; row += 1) {
+    for (let column = range.s.c; column <= range.e.c; column += 1) {
+      const cell = sheet[XLSX.utils.encode_cell({ r: row, c: column })];
+      if (cell) cell.s = { ...(cell.s ?? {}), font: { name: "함초롬돋움", sz: 10 } };
+    }
+  }
+}
+
 export function buildReviewWorkbook(candidates: ReviewCandidate[]): Uint8Array {
   const workbook = XLSX.utils.book_new();
   for (const year of [2024, 2025]) {
-    const rows = candidates
-      .filter((candidate) => candidate.year === year)
-      .map(toExportRow);
+    const rows = candidates.filter((candidate) => candidate.year === year).map(toExportRow);
     const sheet = XLSX.utils.json_to_sheet(rows, { header: [...COLUMNS] });
     sheet["!autofilter"] = { ref: sheet["!ref"] ?? "A1:T1" };
     sheet["!freeze"] = { xSplit: 4, ySplit: 1 };
@@ -62,9 +54,10 @@ export function buildReviewWorkbook(candidates: ReviewCandidate[]): Uint8Array {
       8, 8, 14, 20, 12, 12, 22, 16, 12, 28,
       16, 14, 12, 14, 24, 32, 24, 30, 30, 64,
     ].map((wch) => ({ wch }));
+    applyDefaultFont(sheet);
     XLSX.utils.book_append_sheet(workbook, sheet, `${String(year).slice(2)}년`);
   }
-  return XLSX.write(workbook, { type: "array", bookType: "xlsx" });
+  return XLSX.write(workbook, { type: "array", bookType: "xlsx", cellStyles: true });
 }
 
 export function downloadReviewWorkbook(candidates: ReviewCandidate[]): void {

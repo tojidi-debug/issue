@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeBusinessNumber,
   normalizeCompanyName,
+  normalizeCorporateNumber,
   parseDateValue,
 } from "../lib/normalize";
 
@@ -10,6 +11,10 @@ describe("normalizeCompanyName", () => {
     expect(normalizeCompanyName("(주) 부천공업")).toBe("부천공업");
     expect(normalizeCompanyName("부천공업㈜")).toBe("부천공업");
     expect(normalizeCompanyName("주식회사 부천공업")).toBe("부천공업");
+    expect(normalizeCompanyName("유한회사 부천공업")).toBe("부천공업");
+    expect(normalizeCompanyName("(유) 부천공업")).toBe("부천공업");
+    expect(normalizeCompanyName("농업회사법인 부천공업")).toBe("부천공업");
+    expect(normalizeCompanyName("부천공업 농업법인")).toBe("부천공업");
   });
 
   it("does not remove meaningful internal words", () => {
@@ -26,6 +31,17 @@ describe("normalizeBusinessNumber", () => {
   it("rejects resident numbers and malformed values", () => {
     expect(normalizeBusinessNumber("900101-1234567")).toBe("");
     expect(normalizeBusinessNumber("12345")).toBe("");
+  });
+});
+
+describe("normalizeCorporateNumber", () => {
+  it("returns thirteen digits from a formatted corporate registration number", () => {
+    expect(normalizeCorporateNumber("110111-1234567")).toBe("1101111234567");
+  });
+
+  it("rejects business numbers and malformed values", () => {
+    expect(normalizeCorporateNumber("130-81-23676")).toBe("");
+    expect(normalizeCorporateNumber("12345")).toBe("");
   });
 });
 
