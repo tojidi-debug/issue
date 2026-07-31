@@ -21,6 +21,7 @@ export interface Transaction {
   voucherNo: string;
   clientName: string;
   businessNumber: string;
+  corporateNumber?: string;
   memo: string;
   account: string;
   section: string;
@@ -38,6 +39,7 @@ export interface AttestationClient {
   canonicalName: string;
   normalizedName: string;
   businessNumber: string;
+  corporateNumber?: string;
   kind: Exclude<TargetKind, "감사·기업진단">;
   year?: number;
   source: string;

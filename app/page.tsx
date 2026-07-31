@@ -194,6 +194,17 @@ export default function Home() {
     setAnalysis(null);
   };
 
+  const clearAll = () => {
+    if (processing) return;
+    setQueue([]);
+    setProgress(0);
+    setAnalysis(null);
+    setWarnings([]);
+    setYearFilter("all");
+    setRiskFilter("all");
+    setQuery("");
+  };
+
   const processFiles = async () => {
     if (processing || queue.length === 0) return;
     setProcessing(true);
@@ -279,7 +290,6 @@ export default function Home() {
       <header className="compact-header">
         <div>
           <h1>감사·인증 독립성 검토</h1>
-          <span>서석감사반 수임실적 대사</span>
         </div>
         <p className="local-note">
           <span aria-hidden="true" />
@@ -324,14 +334,32 @@ export default function Home() {
             <div className="progress-line" aria-label={`진행률 ${progress}%`}>
               <span style={{ transform: `scaleX(${progress / 100})` }} />
             </div>
-            <button
-              className="primary-button"
-              type="button"
-              onClick={processFiles}
-              disabled={processing || queue.length === 0}
-            >
-              {processing ? `대사 중 ${progress}%` : "대사 실행"}
-            </button>
+            <div className="action-row">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={processFiles}
+                disabled={processing || queue.length === 0}
+              >
+                {processing ? `대사 중 ${progress}%` : "대사 실행"}
+              </button>
+              <button
+                className="utility-button"
+                type="button"
+                onClick={clearAll}
+                disabled={processing || queue.length === 0}
+              >
+                Clear
+              </button>
+              <button
+                className="utility-button"
+                type="button"
+                onClick={() => window.location.reload()}
+                disabled={processing}
+              >
+                새로고침
+              </button>
+            </div>
           </div>
 
           {warnings.length > 0 && (

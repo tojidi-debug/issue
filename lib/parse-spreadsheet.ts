@@ -1,14 +1,10 @@
 import * as XLSX from "xlsx";
-import type {
-  AttestationClient,
-  FileRole,
-  ParsedFileResult,
-  Transaction,
-} from "./domain";
+import type { AttestationClient, FileRole, ParsedFileResult, Transaction } from "./domain";
 import {
   cleanText,
   normalizeBusinessNumber,
   normalizeCompanyName,
+  normalizeCorporateNumber,
   parseDateValue,
   toNumber,
 } from "./normalize";
@@ -27,6 +23,7 @@ const HEADER_ALIASES: Record<string, string[]> = {
   voucherNo: ["번호", "전표번호"],
   clientName: ["거래처", "거래처명", "회사명"],
   businessNumber: ["사업자주민번호", "사업자등록번호", "사업자번호"],
+  corporateNumber: ["법인등록번호", "법인번호"],
   memo: ["품명", "적요", "적요란", "내용"],
   account: ["계정과목", "계정명"],
   section: ["구분"],
@@ -40,7 +37,7 @@ function headerKey(value: unknown): string {
 }
 
 function findHeader(rows: Row[]): { rowIndex: number; indexes: Record<string, number> } | null {
-  for (let rowIndex = 0; rowIndex < Math.min(rows.length, 40); rowIndex += 1) {
+  for (let rowIndex = 0; rowIndex < Math.min(rows.length, 50); rowIndex += 1) {
     const keys = rows[rowIndex].map(headerKey);
     const indexes: Record<string, number> = {};
     for (const [field, aliases] of Object.entries(HEADER_ALIASES)) {
@@ -68,7 +65,6 @@ export function parseSalesRows(rows: Row[], context: SalesRowContext): Transacti
   const header = findHeader(rows);
   if (!header) return [];
   const transactions: Transaction[] = [];
-
   for (let rowIndex = header.rowIndex + 1; rowIndex < rows.length; rowIndex += 1) {
     const row = rows[rowIndex];
     const date = parseDateValue(valueAt(row, header.indexes, "date"), context.year);
@@ -79,15 +75,15 @@ export function parseSalesRows(rows: Row[], context: SalesRowContext): Transacti
     const explicitTotal = valueAt(row, header.indexes, "total");
     if (!date || !clientName || !/[A-Za-z가-힣]/.test(clientName)) continue;
     if (!memo && amount === 0 && vat === 0) continue;
-    const sourceLocation = `${context.sourceFile} / ${context.sheetName}!${rowIndex + 1}`;
     transactions.push({
       id: `${context.sourceFile}:${context.sheetName}:${rowIndex + 1}`,
       year: Number(date.slice(0, 4)),
       date,
       voucherNo: cleanText(valueAt(row, header.indexes, "voucherNo")),
       clientName,
-      businessNumber: normalizeBusinessNumber(
-        valueAt(row, header.indexes, "businessNumber"),
+      businessNumber: normalizeBusinessNumber(valueAt(row, header.indexes, "businessNumber")),
+      corporateNumber: normalizeCorporateNumber(
+        valueAt(row, header.indexes, "corporateNumber"),
       ),
       memo,
       account: cleanText(valueAt(row, header.indexes, "account")),
@@ -101,7 +97,7 @@ export function parseSalesRows(rows: Row[], context: SalesRowContext): Transacti
       accountant: context.accountant,
       sourceFile: context.sourceFile,
       sourceSheet: context.sheetName,
-      sourceLocation,
+      sourceLocation: `${context.sourceFile} / ${context.sheetName}!${rowIndex + 1}`,
     });
   }
   return transactions;
@@ -136,6 +132,7 @@ function buildLegacyTransaction(
     voucherNo: mapping.voucherNo === undefined ? "" : cleanText(row[mapping.voucherNo]),
     clientName,
     businessNumber: "",
+    corporateNumber: "",
     memo,
     account,
     section: mapping.section === undefined ? "매출" : cleanText(row[mapping.section]),
@@ -152,10 +149,7 @@ function buildLegacyTransaction(
   };
 }
 
-export function parseLegacySalesRows(
-  rows: Row[],
-  context: SalesRowContext,
-): Transaction[] {
+export function parseLegacySalesRows(rows: Row[], context: SalesRowContext): Transaction[] {
   const result: Transaction[] = [];
   const add = (
     row: Row,
@@ -166,8 +160,7 @@ export function parseLegacySalesRows(
     const transaction = buildLegacyTransaction(context, row, rowIndex, mapping, account);
     if (transaction) result.push(transaction);
   };
-  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
-    const row = rows[rowIndex];
+  rows.forEach((row, rowIndex) => {
     if (context.sheetName === "김진태") {
       add(
         row,
@@ -178,20 +171,19 @@ export function parseLegacySalesRows(
       );
     } else if (["박명섭", "이정현"].includes(context.sheetName)) {
       add(row, rowIndex, {
-        voucherNo: 0, date: 1, memo: 2, clientName: 3, amount: 4, vat: 5,
+        voucherNo: 0,
+        date: 1,
+        memo: 2,
+        clientName: 3,
+        amount: 4,
+        vat: 5,
       });
     } else if (context.sheetName === "홍호성") {
-      add(
-        row,
-        rowIndex,
-        { date: 0, memo: 1, clientName: 2, amount: 4, voucherNo: 6 },
-        "기장수수료",
-      );
+      add(row, rowIndex, { date: 0, memo: 1, clientName: 2, amount: 4, voucherNo: 6 }, "기장수수료");
     }
-  }
+  });
   return result;
 }
-
 
 export function parseAttestationRows(
   rows: Row[],
@@ -209,15 +201,9 @@ export function parseAttestationRows(
     headerIndex = i;
     indexes = {
       company: companyIndex,
-      business: keys.findIndex((key) =>
-        ["사업자등록번호", "사업자번호"].includes(key),
-      ),
-      auditor: keys.findIndex((key) =>
-        ["감사인명", "감사인", "감사반명"].includes(key),
-      ),
-      relationship: keys.findIndex((key) =>
-        ["관계", "구분", "연결관계"].includes(key),
-      ),
+      business: keys.findIndex((key) => ["사업자등록번호", "사업자번호"].includes(key)),
+      corporate: keys.findIndex((key) => ["법인등록번호", "법인번호"].includes(key)),
+      relationship: keys.findIndex((key) => ["관계", "구분", "연결관계"].includes(key)),
     };
     break;
   }
@@ -227,9 +213,6 @@ export function parseAttestationRows(
   const clients: AttestationClient[] = [];
   for (let rowIndex = headerIndex + 1; rowIndex < rows.length; rowIndex += 1) {
     const row = rows[rowIndex];
-    const auditor =
-      indexes.auditor >= 0 ? cleanText(row[indexes.auditor]) : "";
-    if (indexes.auditor >= 0 && !auditor.includes("서석")) continue;
     const canonicalName = cleanText(row[indexes.company]);
     const normalizedName = normalizeCompanyName(canonicalName);
     if (!canonicalName || normalizedName.length < 2 || /회사명|해당사항없음/.test(canonicalName)) {
@@ -240,9 +223,9 @@ export function parseAttestationRows(
       canonicalName,
       normalizedName,
       businessNumber:
-        indexes.business >= 0
-          ? normalizeBusinessNumber(row[indexes.business])
-          : "",
+        indexes.business >= 0 ? normalizeBusinessNumber(row[indexes.business]) : "",
+      corporateNumber:
+        indexes.corporate >= 0 ? normalizeCorporateNumber(row[indexes.corporate]) : "",
       kind,
       source: `${sourceFile || "업로드 파일"} / ${sheetName}!${rowIndex + 1}`,
       relatedTo:
@@ -258,20 +241,16 @@ function parseReferenceFallback(
   sourceFile: string,
 ): AttestationClient[] {
   const clients: AttestationClient[] = [];
-  const add = (
-    canonicalName: unknown,
-    businessNumber: unknown,
-    rowIndex: number,
-    detail = "",
-  ) => {
-    const name = cleanText(canonicalName);
-    const normalizedName = normalizeCompanyName(name);
-    if (!name || normalizedName.length < 2) return;
+  const add = (nameValue: unknown, businessValue: unknown, rowIndex: number, detail = "") => {
+    const canonicalName = cleanText(nameValue);
+    const normalizedName = normalizeCompanyName(canonicalName);
+    if (!canonicalName || normalizedName.length < 2) return;
     clients.push({
       id: `${sourceFile}:${sheetName}:${rowIndex + 1}:${clients.length}`,
-      canonicalName: name,
+      canonicalName,
       normalizedName,
-      businessNumber: normalizeBusinessNumber(businessNumber),
+      businessNumber: normalizeBusinessNumber(businessValue),
+      corporateNumber: "",
       kind: "외부감사",
       source: `${sourceFile} / ${sheetName}!${rowIndex + 1}`,
       relatedTo: detail || undefined,
@@ -281,8 +260,8 @@ function parseReferenceFallback(
     add(sheetName.slice(4), "", 0, "감사조서 시트명");
   } else if (sheetName === "choosecols") {
     rows.slice(1).forEach((row, index) => {
-      if (cleanText(row[3]).includes("서석")) add(row[1], row[2], index + 1);
-      if (cleanText(row[7]).includes("서석")) add(row[5], row[6], index + 1);
+      add(row[1], row[2], index + 1);
+      add(row[5], row[6], index + 1);
     });
   } else if (sheetName === "Sheet2") {
     rows.slice(1).forEach((row, index) => {
@@ -292,13 +271,17 @@ function parseReferenceFallback(
   return clients;
 }
 
-
 function detectYear(fileName: string, fallback?: number): number | undefined {
   if (fallback) return fallback;
   const full = fileName.match(/20(24|25|26)/);
   if (full) return Number(full[0]);
   const short = fileName.match(/(?:^|\D)(24|25)(?:년|\D|$)/);
   return short ? 2000 + Number(short[1]) : undefined;
+}
+
+function isPreReviewAuditSheet(fileName: string, sheetName: string): boolean {
+  if (!/사전\s*감리\s*자료/.test(fileName)) return true;
+  return /^(?:2-1[.\s_-])|외부\s*감사\s*(?:수행\s*)?회사|외감\s*회사/i.test(sheetName);
 }
 
 export async function parseSpreadsheet(
@@ -313,10 +296,7 @@ export async function parseSpreadsheet(
   const clients: AttestationClient[] = [];
 
   for (const sheetName of workbook.SheetNames) {
-    if (
-      role === "reference" &&
-      !/^(2-1\.|7-1_|choosecols$|Sheet2$)|수임신고|연결|종속|관계기업/i.test(sheetName)
-    ) continue;
+    if (role === "reference" && !isPreReviewAuditSheet(file.name, sheetName)) continue;
     const rows = XLSX.utils.sheet_to_json<Row>(workbook.Sheets[sheetName], {
       header: 1,
       raw: true,
@@ -336,9 +316,7 @@ export async function parseSpreadsheet(
     } else if (role === "reference") {
       const standard = parseAttestationRows(rows, sheetName, file.name);
       clients.push(
-        ...(standard.length > 0
-          ? standard
-          : parseReferenceFallback(rows, sheetName, file.name)),
+        ...(standard.length > 0 ? standard : parseReferenceFallback(rows, sheetName, file.name)),
       );
     }
   }
@@ -353,7 +331,7 @@ export async function parseSpreadsheet(
   if ((role === "sales" ? transactions.length : clients.length) === 0) {
     warnings.push({
       code: "UNRECOGNIZED_LAYOUT",
-      message: "지원하는 표 머리글을 찾지 못했습니다.",
+      message: "지원하는 표 머리글 또는 대상 시트를 찾지 못했습니다.",
     });
   }
   return {
@@ -367,5 +345,3 @@ export async function parseSpreadsheet(
     amountTotal: transactions.reduce((sum, item) => sum + item.amount, 0),
   };
 }
-
-

@@ -41,26 +41,28 @@ describe("parseSalesRows", () => {
 });
 
 describe("parseAttestationRows", () => {
-  it("extracts audit clients from the 2-1 sheet", () => {
+  it("extracts audit clients and both identifiers from a variable header row", () => {
     const rows = [
+      ["외부감사 수행회사 현황"],
       ["NO", "사업연도", "법인등록번호", "사업자등록번호", "회사명"],
-      [1, "당기", "", "130-81-23676", "부천공업㈜"],
+      [1, "당기", "110111-1234567", "130-81-23676", "부천공업㈜"],
     ];
     expect(parseAttestationRows(rows, "2-1. 외부감사 수행회사 현황", "pre.xlsx")).toMatchObject([
       {
         canonicalName: "부천공업㈜",
         businessNumber: "1308123676",
+        corporateNumber: "1101111234567",
         kind: "외부감사",
       },
     ]);
   });
 
-  it("keeps only Seoseok engagement rows when an auditor column exists", () => {
+  it("does not hard-code a particular audit group", () => {
     const rows = [
       ["감사인명", "회사명", "사업자등록번호"],
       ["서석감사반", "세강산업", "111-22-33333"],
       ["다른감사반", "제외회사", "444-55-66666"],
     ];
-    expect(parseAttestationRows(rows, "2026년 수임신고 외감", "engagement.xlsx")).toHaveLength(1);
+    expect(parseAttestationRows(rows, "2026년 수임신고 외감", "engagement.xlsx")).toHaveLength(2);
   });
 });
