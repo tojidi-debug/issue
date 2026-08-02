@@ -458,11 +458,11 @@ table {
   font-size: 0.68rem;
 }
 
-.col-target { width: 15%; }
-.col-voucher { width: 17%; }
-.col-transaction { width: 19%; }
+.col-target { width: 14%; }
+.col-transaction { width: 20%; }
+.col-evidence { width: 24%; }
 .col-match { width: 21%; }
-.col-note { width: 28%; }
+.col-note { width: 21%; }
 
 th {
   position: sticky;
@@ -506,6 +506,7 @@ tbody tr:hover td { background: color-mix(in oklch, var(--navy) 5%, var(--surfac
 
 .cell-stack > span,
 .source-text { color: var(--muted); }
+.evidence-cell strong { color: var(--navy); }
 .cell-inline { gap: 6px; }
 
 .risk-badge {

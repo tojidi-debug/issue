@@ -90,7 +90,7 @@ export function analyzeIndependence(
     const key = `${transaction.year}:${diagnosticKey(transaction)}`;
     if (key.endsWith(":")) continue;
     const current = diagnostics.get(key);
-    const evidence = `${transaction.date} / ${transaction.accountant || "담당자 미상"} / ${transaction.memo}`;
+    const evidence = `${transaction.date} / ${transaction.memo} / ${new Intl.NumberFormat("ko-KR").format(transaction.amount)}원 / ${transaction.sourceLocation}`;
     if (current) {
       current.evidence.push(evidence);
     } else {
