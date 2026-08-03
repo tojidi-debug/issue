@@ -317,7 +317,7 @@ export default function Home() {
           </div>
 
           <FileDropzone
-            title="기준자료"
+            title="기준자료(사전제출자료 등)"
             role="reference"
             items={references.map(({ item }) => item)}
             onAdd={addFiles}
