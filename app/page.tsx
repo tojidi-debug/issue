@@ -6,13 +6,13 @@ import type {
   AttestationClient,
   FileRole,
   ParsedFileResult,
-  ReviewCandidate,
   Transaction,
 } from "@/lib/domain";
 import { analyzeIndependence } from "@/lib/analyze";
 import { downloadReviewWorkbook } from "@/lib/export-xlsx";
 import { parseInputFile } from "@/lib/parse-input";
 import { getReasonTone } from "@/lib/presentation";
+import { formatAmountRange, groupReviewCandidates, type ReviewGroup } from "@/lib/group-review";
 
 type QueueItem = {
   file: File;
@@ -111,7 +111,7 @@ function Summary({ analysis }: { analysis: AnalysisResult }) {
   );
 }
 
-function ReviewTable({ rows }: { rows: ReviewCandidate[] }) {
+function ReviewTable({ rows }: { rows: ReviewGroup[] }) {
   if (rows.length === 0) {
     return <p className="result-empty">현재 조건에 해당하는 검토 후보가 없습니다.</p>;
   }
@@ -120,18 +120,18 @@ function ReviewTable({ rows }: { rows: ReviewCandidate[] }) {
       <table>
         <colgroup>
           <col className="col-target" />
-          <col className="col-voucher" />
           <col className="col-transaction" />
+          <col className="col-evidence" />
           <col className="col-match" />
           <col className="col-note" />
         </colgroup>
         <thead>
           <tr>
-            <th>위험 · 대상</th>
-            <th>전표</th>
-            <th>거래 내용</th>
-            <th>대사 근거</th>
-            <th>검토 비고</th>
+            <th>위험 · 대상회사</th>
+            <th>검토 전표 묶음</th>
+            <th>대상 판단 근거</th>
+            <th>확인 필요사항</th>
+            <th>원본 · 검토 비고</th>
           </tr>
         </thead>
         <tbody>
@@ -141,32 +141,40 @@ function ReviewTable({ rows }: { rows: ReviewCandidate[] }) {
                 <div className="cell-stack">
                   <div className="cell-inline">
                     <span className={`risk-badge risk-${row.risk}`}>{row.risk}</span>
-                    <span className="quiet-label">{row.targetKind}</span>
+                    <span className="quiet-label">{row.targetKind} · {row.year}년</span>
                   </div>
                   <strong className="company-name">{row.matchedCompany}</strong>
+                  <span>{row.accountants.join(", ") || "담당자 미인식"}</span>
                 </div>
               </td>
               <td>
                 <div className="cell-stack">
-                  <strong>{row.date}</strong>
-                  <span>{row.year}년 · {row.accountant || "담당자 미인식"}</span>
-                  <span className="source-text">{row.sourceLocation}</span>
+                  <strong>{row.dateFrom === row.dateTo ? row.dateFrom : `${row.dateFrom}~${row.dateTo}`}</strong>
+                  <span>{row.serviceClass} · {formatMoney(row.transactionCount)}건</span>
+                  <span>건당 {formatAmountRange(row.amountMin, row.amountMax)}</span>
+                  <span className="amount">공급가액 합계 {formatMoney(row.totalAmount)}원</span>
+                  <span>{row.memos.slice(0, 4).join(", ")}</span>
                 </div>
               </td>
               <td>
-                <div className="cell-stack">
-                  <strong>{row.memo || "적요 없음"}</strong>
-                  <span className="amount">{formatMoney(row.amount)}원</span>
-                  <span>{row.serviceClass}</span>
+                <div className="cell-stack evidence-cell">
+                  <strong>{row.attestationEvidence || row.targetSource}</strong>
+                  <span>{row.matchBasis}</span>
                 </div>
               </td>
               <td>
                 <div className="cell-stack">
                   <strong>{row.issue}</strong>
-                  <span>{row.matchBasis}</span>
+                  <span>{row.note}</span>
                 </div>
               </td>
-              <td className="note-cell">{row.note}</td>
+              <td>
+                <div className="cell-stack">
+                  <strong>{row.sourceLocations.length}개 원본 위치</strong>
+                  <span className="source-text">{row.sourceLocations.slice(0, 4).join("; ")}</span>
+                  {row.sourceLocations.length > 4 && <span>외 {row.sourceLocations.length - 4}건</span>}
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -174,7 +182,6 @@ function ReviewTable({ rows }: { rows: ReviewCandidate[] }) {
     </div>
   );
 }
-
 export default function Home() {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [progress, setProgress] = useState(0);
@@ -277,6 +284,8 @@ export default function Home() {
       return true;
     });
   }, [analysis, query, riskFilter, yearFilter]);
+
+  const grouped = useMemo(() => groupReviewCandidates(filtered), [filtered]);
 
   const references = queue
     .map((item, index) => ({ item, index }))
@@ -382,7 +391,7 @@ export default function Home() {
               <div className="results-header">
                 <div>
                   <h2 id="results-title">대사 결과</h2>
-                  <span>{formatMoney(filtered.length)}건 표시</span>
+                  <span>{formatMoney(grouped.length)}개 묶음 · {formatMoney(filtered.length)}건</span>
                 </div>
                 <button
                   className="export-button"
@@ -422,7 +431,7 @@ export default function Home() {
                 />
               </div>
 
-              <ReviewTable rows={filtered} />
+              <ReviewTable rows={grouped} />
             </>
           )}
         </section>

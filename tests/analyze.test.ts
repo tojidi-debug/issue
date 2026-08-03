@@ -91,6 +91,8 @@ describe("analyzeIndependence", () => {
       },
     ]);
     expect(result.candidates[0].note).toContain("공인회계사법 제21조");
+    expect(result.candidates[0].attestationEvidence).toContain("기업진단수수료");
+    expect(result.candidates[0].attestationEvidence).toContain("sample.xlsx / 임중길!2");
   });
 
   it("excludes tax filing for an audit client", () => {
