@@ -274,9 +274,9 @@ function parseReferenceFallback(
 
 function detectYear(fileName: string, fallback?: number): number | undefined {
   if (fallback) return fallback;
-  const full = fileName.match(/20(24|25|26)/);
+  const full = fileName.match(/20\d{2}/);
   if (full) return Number(full[0]);
-  const short = fileName.match(/(?:^|\D)(24|25)(?:년|\D|$)/);
+  const short = fileName.match(/(?:^|\D)(\d{2})(?:년|\D|$)/);
   return short ? 2000 + Number(short[1]) : undefined;
 }
 

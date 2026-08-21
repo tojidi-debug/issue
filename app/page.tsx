@@ -222,6 +222,8 @@ export default function Home() {
     const transactions: Transaction[] = [];
     const clients: AttestationClient[] = [];
     const messages: string[] = [];
+    const yearPending: Array<{ index: number; item: QueueItem }> = [];
+    let sharedYear: number | undefined;
 
     for (let index = 0; index < queue.length; index += 1) {
       setQueue((current) =>
@@ -234,11 +236,20 @@ export default function Home() {
           queue[index].file,
           queue[index].role,
         );
+        sharedYear ??= result.detectedYear;
         transactions.push(...result.transactions);
         clients.push(...result.clients);
-        result.warnings.forEach((warning) =>
-          messages.push(`${result.fileName}: ${warning.message}`),
-        );
+        const shouldRetryWithSharedYear =
+          queue[index].role === "sales" &&
+          result.transactions.length === 0 &&
+          result.detectedYear === undefined;
+        if (shouldRetryWithSharedYear) {
+          yearPending.push({ index, item: queue[index] });
+        } else {
+          result.warnings.forEach((warning) =>
+            messages.push(`${result.fileName}: ${warning.message}`),
+          );
+        }
         setQueue((current) =>
           current.map((item, itemIndex) =>
             itemIndex === index
@@ -264,6 +275,30 @@ export default function Home() {
       }
       setProgress(Math.round(((index + 1) / queue.length) * 100));
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+    for (const { index, item } of yearPending) {
+      if (!sharedYear) {
+        messages.push(
+          `${item.file.name}: 연도를 확인할 수 없습니다. 연도가 표시된 매출 파일을 함께 첨부하세요.`,
+        );
+        continue;
+      }
+      const retried = await parseInputFile(item.file, item.role, { year: sharedYear });
+      transactions.push(...retried.transactions);
+      retried.warnings.forEach((warning) =>
+        messages.push(`${retried.fileName}: ${warning.message}`),
+      );
+      setQueue((current) =>
+        current.map((currentItem, itemIndex) =>
+          itemIndex === index
+            ? {
+                ...currentItem,
+                status: retried.warnings.length ? "경고" : "완료",
+                detail: `${formatMoney(retried.transactions.length)}건 · ${sharedYear}년 적용`,
+              }
+            : currentItem,
+        ),
+      );
     }
     setWarnings(messages);
     setAnalysis(analyzeIndependence(transactions, clients));

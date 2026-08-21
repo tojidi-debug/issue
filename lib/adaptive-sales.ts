@@ -297,7 +297,7 @@ export function inferYearFromRows(rows: Row[]): number | undefined {
       if (!(value instanceof Date) && typeof value !== "string") continue;
       const parsed = parseDateValue(value);
       const text = cleanText(value);
-      const hinted = text.match(/(?:^|\D)(20(?:24|25|26)|(?:24|25)년)(?:\D|$)/);
+      const hinted = text.match(/(?:^|\D)(20\d{2}|\d{2}년)(?:\D|$)/);
       const year = parsed
         ? Number(parsed.slice(0, 4))
         : hinted

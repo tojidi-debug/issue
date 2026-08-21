@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { describe, expect, it } from "vitest";
+import { inferYearFromRows } from "../lib/adaptive-sales";
 import { parseSalesRows, parseSpreadsheet } from "../lib/parse-spreadsheet";
 
 const multiRowLedger = [
@@ -17,6 +18,32 @@ const multiRowLedger = [
 ];
 
 describe("adaptive sales-ledger parsing", () => {
+  it("infers an older fiscal-year heading and parses month-day ledger rows", () => {
+    const rows = [
+      ["", "", "계 정 별 원 장"],
+      ["", "", "2021.04.01 ~ 2022.03.31"],
+      ["날짜", "적요란", "거래처", "차변", "대변", "잔액"],
+      ["04-06", "제1,2기 감사수수료", "한빛 주식회사", "", 2500000, 48500000],
+    ];
+
+    expect(inferYearFromRows(rows)).toBe(2021);
+    expect(
+      parseSalesRows(rows, {
+        accountant: "한일",
+        year: 2021,
+        sourceFile: "매출계정별원장(한일제출).xls",
+        sheetName: "감사수수료",
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        date: "2021-04-06",
+        clientName: "한빛 주식회사",
+        memo: "제1,2기 감사수수료",
+        amount: 2500000,
+      }),
+    ]);
+  });
+
   it("infers separate memo and company columns beneath repeated multi-row headers", () => {
     const result = parseSalesRows(multiRowLedger, {
       accountant: "김진태",
