@@ -358,6 +358,7 @@ export default function Home() {
                 onClick={processFiles}
                 disabled={processing || !readyToRun}
               >
+                <span className="run-icon" aria-hidden="true">⚙</span>
                 {processing ? `대사 중 ${progress}%` : "대사 실행"}
               </button>
               <button
