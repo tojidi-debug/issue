@@ -213,7 +213,9 @@ export default function Home() {
   };
 
   const processFiles = async () => {
-    if (processing || queue.length === 0) return;
+    const hasReference = queue.some((item) => item.role === "reference");
+    const hasSales = queue.some((item) => item.role === "sales");
+    if (processing || !hasReference || !hasSales) return;
     setProcessing(true);
     setProgress(0);
     setAnalysis(null);
@@ -293,6 +295,7 @@ export default function Home() {
   const sales = queue
     .map((item, index) => ({ item, index }))
     .filter(({ item }) => item.role === "sales");
+  const readyToRun = references.length > 0 && sales.length > 0;
 
   return (
     <main>
@@ -340,6 +343,11 @@ export default function Home() {
           />
 
           <div className="run-area">
+            <p className={`readiness ${readyToRun ? "readiness-ready" : ""}`}>
+              {readyToRun
+                ? "필수자료가 준비되었습니다."
+                : "기준자료와 구성원 매출장을 각각 1개 이상 첨부하세요."}
+            </p>
             <div className="progress-line" aria-label={`진행률 ${progress}%`}>
               <span style={{ transform: `scaleX(${progress / 100})` }} />
             </div>
@@ -348,7 +356,7 @@ export default function Home() {
                 className="primary-button"
                 type="button"
                 onClick={processFiles}
-                disabled={processing || queue.length === 0}
+                disabled={processing || !readyToRun}
               >
                 {processing ? `대사 중 ${progress}%` : "대사 실행"}
               </button>
