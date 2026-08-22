@@ -221,7 +221,14 @@ export function parseAttestationRows(
     const row = rows[rowIndex];
     const canonicalName = cleanText(row[indexes.company]);
     const normalizedName = normalizeCompanyName(canonicalName);
-    if (isNonExternalAudit(sourceFile, sheetName, ...row)) continue;
+    if (
+      isNonExternalAudit(
+        sourceFile,
+        sheetName,
+        canonicalName,
+        indexes.relationship >= 0 ? row[indexes.relationship] : "",
+      )
+    ) continue;
     if (!canonicalName || normalizedName.length < 2 || /회사명|해당사항없음/.test(canonicalName)) {
       continue;
     }
