@@ -166,7 +166,8 @@ export function groupReviewCandidates(rows: ReviewCandidate[]): ReviewGroup[] {
       .sort((left, right) => left.year - right.year)
       .map((detail) => {
         const monthsText = formatMonths(detail.months);
-        const memoText = group.serviceClasses.includes("기장·전표처리")
+        const memoText = group.serviceClasses.length === 1 &&
+          group.serviceClasses[0] === "기장·전표처리"
           ? "기장료"
           : detail.memos.slice(0, 3).join("·");
         const unitText = formatAmountRange(
