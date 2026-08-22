@@ -108,7 +108,7 @@ function Summary({ analysis }: { analysis: AnalysisResult }) {
         </span>
       ))}
       <span className="summary-guidance">
-        계약서·세금계산서·산출물을 확인하여 실제 업무 성격과 경영진 의사결정 또는 회계장부 작성 관여 여부를 확인해야 합니다.
+        아래 내역이 모두 완전하거나 정확하지 아니할 수 있으며, 관련 사항의 계약서·세금계산서·산출물을 확인하여 실제 업무 성격과 경영진 의사결정 또는 회계장부 작성 관여 여부 확인
       </span>
     </div>
   );

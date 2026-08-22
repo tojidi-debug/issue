@@ -537,9 +537,9 @@ tbody tr:hover td { background: color-mix(in oklch, var(--navy) 5%, var(--surfac
 .summary-guidance {
   align-self: center;
   margin-left: 4px;
-  color: var(--navy);
+  color: var(--ink);
   font-size: 0.66rem;
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1.45;
 }
 .cell-inline { gap: 6px; }
