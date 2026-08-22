@@ -35,7 +35,7 @@ function toSummaryRows(candidates: ReviewCandidate[]): Record<string, string | n
     인증대상: group.targetKind,
     "검토대상 기간": group.dateFrom === group.dateTo ? group.dateFrom : `${group.dateFrom}~${group.dateTo}`,
     "검토 전표 요약": group.summaryText,
-    "대상 판단 근거": group.attestationEvidence || group.targetSource,
+    "대상 판단 근거": group.basisSummary,
     매칭근거: group.matchBasis, 확인필요사항: group.issue,
     "공급가액 합계": group.totalAmount, "부가세 합계": group.vatTotal, 합계: group.grossTotal,
     담당회계사: group.accountants.join(", "), 원본위치: group.sourceLocations.join("; "),

@@ -30,6 +30,10 @@ describe("groupReviewCandidates", () => {
     expect(groups[0]).toMatchObject({ transactionCount: 2, dateFrom: "2025-04-10",
       dateTo: "2025-05-10", amountMin: 130000, amountMax: 150000, totalAmount: 280000 });
     expect(groups[0].attestationEvidence).toContain("25년!2490");
+    expect(groups[0].basisSummary).toContain(
+      "가온감사반_매출장.xlsx / 25년상 기업진단 회사이자",
+    );
+    expect(groups[0].basisSummary).toContain("기장료 납부내역 확인 필요");
     expect(groups[0].sourceLocations).toEqual([
       "가온감사반_매출장.xlsx / 25년!2585", "가온감사반_매출장.xlsx / 25년!2683",
     ]);

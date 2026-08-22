@@ -159,7 +159,7 @@ function ReviewTable({ rows }: { rows: ReviewGroup[] }) {
               </td>
               <td>
                 <div className="cell-stack evidence-cell">
-                  <strong>{row.attestationEvidence || row.targetSource}</strong>
+                  <strong>{row.basisSummary}</strong>
                   <span>{row.matchBasis}</span>
                 </div>
               </td>

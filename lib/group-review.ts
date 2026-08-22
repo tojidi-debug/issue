@@ -30,6 +30,7 @@ export interface ReviewGroup {
   monthlyAverage: number;
   legalBasis: string;
   summaryText: string;
+  basisSummary: string;
   yearDetails: Array<{
     year: number;
     months: string[];
@@ -59,6 +60,16 @@ function formatCompactAmount(value: number): string {
   return `${new Intl.NumberFormat("ko-KR").format(value)}원`;
 }
 
+function sheetFromLocation(value: string): string {
+  const parts = value.split(/\s*\/\s*/);
+  return (parts.at(-1) ?? value).replace(/!\d+$/, "").trim();
+}
+
+function diagnosticSource(value: string): string {
+  const match = value.match(/([^;/]+\.xlsx?\s*\/\s*[^!;]+)!?\d*/i);
+  return match?.[1]?.trim() ?? sheetFromLocation(value);
+}
+
 export function formatAmountRange(min: number, max: number): string {
   const format = (value: number) => new Intl.NumberFormat("ko-KR").format(value);
   return min === max ? `${format(min)}원` : `${format(min)}~${format(max)}원`;
@@ -81,7 +92,7 @@ export function groupReviewCandidates(rows: ReviewCandidate[]): ReviewGroup[] {
         accountants: unique([row.accountant]), sourceLocations: unique([row.sourceLocation]),
         years: [row.year], serviceClasses: [row.serviceClass],
         transactionDates: [row.date], monthlyAverage: row.amount,
-        legalBasis: "", summaryText: "",
+        legalBasis: "", summaryText: "", basisSummary: "",
         yearDetails: [{
           year: row.year, months: [row.date.slice(5, 7)], totalAmount: row.amount,
           transactionCount: 1, unitAmounts: [row.amount], memos: unique([row.memo]),
@@ -153,6 +164,18 @@ export function groupReviewCandidates(rows: ReviewCandidate[]): ReviewGroup[] {
       .join(", ");
     group.summaryText =
       `${group.targetKind} 대상인 ${group.matchedCompany}: ${yearlyText} 등 확인 필요.`;
+    const ledgerSheets = unique(group.sourceLocations.map(sheetFromLocation)).slice(0, 3);
+    const feeDescription = group.serviceClasses.includes("기장·전표처리")
+      ? "기장료 납부내역"
+      : "자문·컨설팅·기타용역 수수료 납부내역";
+    const auditSource = sheetFromLocation(group.targetSource);
+    const diagnosisSource = diagnosticSource(group.attestationEvidence);
+    group.basisSummary =
+      group.targetKind === "기업진단"
+        ? `${diagnosisSource}상 기업진단 회사이자, ${ledgerSheets.join(", ")} ${feeDescription} 확인 필요`
+        : group.targetKind === "외부감사"
+          ? `${auditSource}상 외부감사 회사이자, ${ledgerSheets.join(", ")} ${feeDescription} 확인 필요`
+          : `${auditSource}상 외부감사·기업진단 회사이자, ${ledgerSheets.join(", ")} ${feeDescription} 확인 필요`;
   }
   return [...groups.values()].sort((a, b) =>
     a.year - b.year || (a.risk === b.risk ? 0 : a.risk === "상" ? -1 : 1) ||
