@@ -6,13 +6,12 @@ const DETAIL_COLUMNS = [
   "연도", "위험도", "인증대상 구분", "매칭 회사", "거래일자", "전표번호", "거래처",
   "사업자(주민)번호", "담당회계사", "품명·적요", "계정과목", "공급가액", "부가세",
   "합계", "용역분류", "확인필요사항", "매칭근거", "인증근거", "원본위치",
-  "비고(왜 확인해야 하는지)",
 ] as const;
 
 const SUMMARY_COLUMNS = [
   "회사", "연도", "위험도", "인증대상", "검토대상 기간", "검토 전표 요약",
   "대상 판단 근거", "매칭근거", "확인필요사항", "공급가액 합계", "부가세 합계",
-  "합계", "담당회계사", "원본위치", "비고(왜 확인해야 하는지)",
+  "합계", "담당회계사", "원본위치",
 ] as const;
 
 function toDetailRow(candidate: ReviewCandidate): Record<string, string | number> {
@@ -25,7 +24,7 @@ function toDetailRow(candidate: ReviewCandidate): Record<string, string | number
     부가세: candidate.vat, 합계: candidate.total, 용역분류: candidate.serviceClass,
     확인필요사항: candidate.issue, 매칭근거: candidate.matchBasis,
     인증근거: candidate.attestationEvidence || candidate.targetSource,
-    원본위치: candidate.sourceLocation, "비고(왜 확인해야 하는지)": candidate.note,
+    원본위치: candidate.sourceLocation,
   };
 }
 
@@ -39,7 +38,6 @@ function toSummaryRows(candidates: ReviewCandidate[]): Record<string, string | n
     매칭근거: group.matchBasis, 확인필요사항: group.issue,
     "공급가액 합계": group.totalAmount, "부가세 합계": group.vatTotal, 합계: group.grossTotal,
     담당회계사: group.accountants.join(", "), 원본위치: group.sourceLocations.join("; "),
-    "비고(왜 확인해야 하는지)": group.note,
   }));
 }
 
@@ -66,7 +64,7 @@ function applyBaseStyle(sheet: XLSX.WorkSheet, columnCount: number): void {
 export function buildReviewWorkbook(candidates: ReviewCandidate[]): Uint8Array {
   const workbook = XLSX.utils.book_new();
   const summary = XLSX.utils.json_to_sheet(toSummaryRows(candidates), { header: [...SUMMARY_COLUMNS] });
-  summary["!cols"] = [22, 8, 8, 13, 23, 48, 58, 25, 34, 16, 14, 16, 18, 62, 68].map((wch) => ({ wch }));
+  summary["!cols"] = [22, 8, 8, 13, 23, 48, 58, 25, 34, 16, 14, 16, 18, 62].map((wch) => ({ wch }));
   applyBaseStyle(summary, SUMMARY_COLUMNS.length);
   XLSX.utils.book_append_sheet(workbook, summary, "요약");
 
@@ -74,7 +72,7 @@ export function buildReviewWorkbook(candidates: ReviewCandidate[]): Uint8Array {
   for (const year of years) {
     const rows = candidates.filter((candidate) => candidate.year === year).map(toDetailRow);
     const sheet = XLSX.utils.json_to_sheet(rows, { header: [...DETAIL_COLUMNS] });
-    sheet["!cols"] = [8, 8, 14, 20, 12, 12, 22, 16, 12, 28, 16, 14, 12, 14, 24, 32, 24, 44, 38, 64].map((wch) => ({ wch }));
+    sheet["!cols"] = [8, 8, 14, 20, 12, 12, 22, 16, 12, 28, 16, 14, 12, 14, 24, 32, 24, 44, 38].map((wch) => ({ wch }));
     applyBaseStyle(sheet, DETAIL_COLUMNS.length);
     sheet["!freeze"] = { xSplit: 4, ySplit: 1 };
     XLSX.utils.book_append_sheet(workbook, sheet, `${String(year).slice(2)}년`);

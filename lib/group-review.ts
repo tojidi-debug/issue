@@ -70,6 +70,18 @@ function diagnosticSource(value: string): string {
   return match?.[1]?.trim() ?? sheetFromLocation(value);
 }
 
+function formatMonths(months: string[]): string {
+  const values = [...new Set(months.map(Number))].sort((left, right) => left - right);
+  if (values.length === 0) return "";
+  const consecutive = values.every(
+    (value, index) => index === 0 || value === values[index - 1] + 1,
+  );
+  if (consecutive && values.length > 1) {
+    return `${values[0]}~${values[values.length - 1]}월`;
+  }
+  return `${values.join("·")}월`;
+}
+
 export function formatAmountRange(min: number, max: number): string {
   const format = (value: number) => new Intl.NumberFormat("ko-KR").format(value);
   return min === max ? `${format(min)}원` : `${format(min)}~${format(max)}원`;
@@ -153,17 +165,19 @@ export function groupReviewCandidates(rows: ReviewCandidate[]): ReviewGroup[] {
     const yearlyText = group.yearDetails
       .sort((left, right) => left.year - right.year)
       .map((detail) => {
-        const monthsText = detail.months.map((month) => `${month}월`).join("·");
-        const memoText = detail.memos.slice(0, 4).join("·");
+        const monthsText = formatMonths(detail.months);
+        const memoText = group.serviceClasses.includes("기장·전표처리")
+          ? "기장료"
+          : detail.memos.slice(0, 3).join("·");
         const unitText = formatAmountRange(
           Math.min(...detail.unitAmounts),
           Math.max(...detail.unitAmounts),
         );
-        return `${detail.year}년 ${monthsText} ${memoText} 총 ${new Intl.NumberFormat("ko-KR").format(detail.totalAmount)}원(건당 ${unitText})`;
+        return `${String(detail.year).slice(2)}년 ${monthsText} ${memoText} 총 ${new Intl.NumberFormat("ko-KR").format(detail.totalAmount)}원(건당 ${unitText})`;
       })
       .join(", ");
     group.summaryText =
-      `${group.targetKind} 대상인 ${group.matchedCompany}: ${yearlyText} 등 확인 필요.`;
+      `${group.targetKind} 대상인 ${group.matchedCompany}: ${yearlyText} 확인 필요.`;
     const ledgerSheets = unique(group.sourceLocations.map(sheetFromLocation)).slice(0, 3);
     const feeDescription = group.serviceClasses.includes("기장·전표처리")
       ? "기장료 납부내역"

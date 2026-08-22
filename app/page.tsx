@@ -167,14 +167,15 @@ function ReviewTable({ rows }: { rows: ReviewGroup[] }) {
                 <div className="cell-stack">
                   <strong>{row.issue}</strong>
                   <span>{row.serviceClasses.join(" · ")}</span>
-                  <span>{row.note}</span>
                 </div>
               </td>
               <td>
                 <div className="cell-stack">
                   <strong>{row.sourceLocations.length}개 원본 위치</strong>
                   <span className="source-text">{row.sourceLocations.slice(0, 4).join("; ")}</span>
-                  {row.sourceLocations.length > 4 && <span>외 {row.sourceLocations.length - 4}건</span>}
+                  {row.sourceLocations.length > 4 && (
+                    <span>추가 원본 위치 {row.sourceLocations.length - 4}개</span>
+                  )}
                 </div>
               </td>
             </tr>

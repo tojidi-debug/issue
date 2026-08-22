@@ -30,6 +30,7 @@ describe("groupReviewCandidates", () => {
     expect(groups[0]).toMatchObject({ transactionCount: 2, dateFrom: "2025-04-10",
       dateTo: "2025-05-10", amountMin: 130000, amountMax: 150000, totalAmount: 280000 });
     expect(groups[0].attestationEvidence).toContain("25년!2490");
+    expect(groups[0].summaryText).toContain("25년 4~5월 기장료");
     expect(groups[0].basisSummary).toContain(
       "가온감사반_매출장.xlsx / 25년상 기업진단 회사이자",
     );
@@ -64,7 +65,7 @@ describe("groupReviewCandidates", () => {
       "회계자문·컨설팅",
     ]);
     expect(groups[0].legalBasis).toBe("외부감사법상 독립성 검토 후보");
-    expect(groups[0].summaryText).toContain("2025년 04월·06월");
+    expect(groups[0].summaryText).toContain("25년 4·6월");
     expect(groups[0].summaryText).toContain("총 260,000원");
     expect(groups[0].summaryText).toContain("기타용역수수료");
   });
