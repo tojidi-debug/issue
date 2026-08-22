@@ -428,6 +428,9 @@ export default function Home() {
               <h2 id="results-title">대사 결과</h2>
               <p>관련 파일을 첨부하고 대사를 실행하면<br />확인이 필요한 전표만 표시됩니다.</p>
               <span>후보는 독립성 위반 확정이 아닙니다.</span>
+              <strong className="accuracy-note">
+                동 대사결과는 완전하거나 정확하지 않을 수 있습니다. 추가 확인 필요
+              </strong>
             </div>
           ) : (
             <>

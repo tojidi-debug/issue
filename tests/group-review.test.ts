@@ -60,7 +60,8 @@ describe("groupReviewCandidates", () => {
       "회계자문·컨설팅",
     ]);
     expect(groups[0].legalBasis).toBe("외부감사법상 독립성 검토 후보");
-    expect(groups[0].summaryText).toContain("월평균");
+    expect(groups[0].summaryText).toContain("2025년 04월·06월");
+    expect(groups[0].summaryText).toContain("총 260,000원");
     expect(groups[0].summaryText).toContain("기타용역수수료");
   });
 });

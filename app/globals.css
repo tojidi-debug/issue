@@ -376,7 +376,14 @@ main {
   line-height: 1.65;
 }
 
-.empty-results > span:last-child { font-size: 0.66rem; }
+.empty-results > span:last-of-type { font-size: 0.66rem; }
+
+.accuracy-note {
+  margin-top: var(--space-sm);
+  color: var(--navy);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
 
 .results-header {
   flex: 0 0 auto;

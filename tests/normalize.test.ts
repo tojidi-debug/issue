@@ -8,11 +8,12 @@ import {
 
 describe("normalizeCompanyName", () => {
   it("treats Korean legal-form variants as the same company", () => {
-    expect(normalizeCompanyName("(주) 부천공업")).toBe("부천공업");
-    expect(normalizeCompanyName("부천공업㈜")).toBe("부천공업");
-    expect(normalizeCompanyName("주식회사 부천공업")).toBe("부천공업");
-    expect(normalizeCompanyName("유한회사 부천공업")).toBe("부천공업");
-    expect(normalizeCompanyName("(유) 부천공업")).toBe("부천공업");
+    [
+      "㈜부천공업", "(주)부천공업", "주식회사 부천공업", "주식회사부천공업",
+      "부천공업,주식회사", "부천공업, 주식회사", "부천공업 주식회사", "부천공업",
+      "유한회사 부천공업", "유한회사부천공업", "(유)부천공업", "(유) 부천공업",
+      "㈲부천공업", "부천공업(유)", "부천공업, 유한회사", "부천공업 유한회사",
+    ].forEach((value) => expect(normalizeCompanyName(value)).toBe("부천공업"));
     expect(normalizeCompanyName("농업회사법인 부천공업")).toBe("부천공업");
     expect(normalizeCompanyName("부천공업 농업법인")).toBe("부천공업");
   });

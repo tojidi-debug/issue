@@ -30,6 +30,14 @@ export interface ReviewGroup {
   monthlyAverage: number;
   legalBasis: string;
   summaryText: string;
+  yearDetails: Array<{
+    year: number;
+    months: string[];
+    totalAmount: number;
+    transactionCount: number;
+    unitAmounts: number[];
+    memos: string[];
+  }>;
 }
 
 function unique(values: string[]): string[] {
@@ -74,6 +82,10 @@ export function groupReviewCandidates(rows: ReviewCandidate[]): ReviewGroup[] {
         years: [row.year], serviceClasses: [row.serviceClass],
         transactionDates: [row.date], monthlyAverage: row.amount,
         legalBasis: "", summaryText: "",
+        yearDetails: [{
+          year: row.year, months: [row.date.slice(5, 7)], totalAmount: row.amount,
+          transactionCount: 1, unitAmounts: [row.amount], memos: unique([row.memo]),
+        }],
       });
       continue;
     }
@@ -96,6 +108,22 @@ export function groupReviewCandidates(rows: ReviewCandidate[]): ReviewGroup[] {
       row.serviceClass,
     ]) as ServiceClass[];
     current.transactionDates = unique([...current.transactionDates, row.date]);
+    const yearDetail = current.yearDetails.find((detail) => detail.year === row.year);
+    if (yearDetail) {
+      yearDetail.months = unique([...yearDetail.months, row.date.slice(5, 7)]).sort();
+      yearDetail.totalAmount += row.amount;
+      yearDetail.transactionCount += 1;
+      yearDetail.unitAmounts = unique([
+        ...yearDetail.unitAmounts.map(String),
+        String(row.amount),
+      ]).map(Number);
+      yearDetail.memos = unique([...yearDetail.memos, row.memo]);
+    } else {
+      current.yearDetails.push({
+        year: row.year, months: [row.date.slice(5, 7)], totalAmount: row.amount,
+        transactionCount: 1, unitAmounts: [row.amount], memos: [row.memo],
+      });
+    }
     current.issue = unique([current.issue, row.issue]).join(" / ");
     current.note = unique([current.note, row.note]).join(" ");
     current.attestationEvidence = unique([
@@ -111,17 +139,21 @@ export function groupReviewCandidates(rows: ReviewCandidate[]): ReviewGroup[] {
         : group.targetKind === "기업진단"
           ? "공인회계사법상 독립성 검토 후보"
           : "외부감사법·공인회계사법상 독립성 검토 후보";
-    const highlights = group.transactionDates
-      .map((date, index) => ({ date, memo: group.memos[index] ?? group.memos[0] ?? "용역", amount: undefined }))
-      .slice(0, 3)
-      .map(({ date, memo }) => `${date} ${memo}`)
+    const yearlyText = group.yearDetails
+      .sort((left, right) => left.year - right.year)
+      .map((detail) => {
+        const monthsText = detail.months.map((month) => `${month}월`).join("·");
+        const memoText = detail.memos.slice(0, 4).join("·");
+        const unitText = formatAmountRange(
+          Math.min(...detail.unitAmounts),
+          Math.max(...detail.unitAmounts),
+        );
+        return `${detail.year}년 ${monthsText} ${memoText} 총 ${new Intl.NumberFormat("ko-KR").format(detail.totalAmount)}원(건당 ${unitText})`;
+      })
       .join(", ");
     group.summaryText =
-      `${group.targetKind} 대상인 ${group.matchedCompany}에 대해 ` +
-      `${months}개월간 월평균 ${formatCompactAmount(group.monthlyAverage)}, ` +
-      `합계 ${formatCompactAmount(group.totalAmount)}의 ${group.serviceClasses.join("·")} 관련 수수료 거래가 확인되었습니다. ` +
-      `${highlights ? `주요 내역은 ${highlights}입니다. ` : ""}` +
-      "계약서·세금계산서·산출물을 확인하여 실제 업무 성격과 경영진 의사결정 또는 회계장부 작성 관여 여부를 확인할 필요가 있습니다.";
+      `${group.targetKind} 대상인 ${group.matchedCompany}: ${yearlyText} 등 확인 필요. ` +
+      "계약서·세금계산서·산출물을 확인하여 실제 업무 성격과 경영진 의사결정 또는 회계장부 작성 관여 여부를 확인해야 합니다.";
   }
   return [...groups.values()].sort((a, b) =>
     a.year - b.year || (a.risk === b.risk ? 0 : a.risk === "상" ? -1 : 1) ||

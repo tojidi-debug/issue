@@ -18,7 +18,7 @@ const candidate: ReviewCandidate = {
 it("writes the requested font to the XLSX style table", () => {
   const bytes = new Uint8Array(buildReviewWorkbook([candidate]));
   const workbook = XLSX.read(bytes, { type: "array" });
-  expect(workbook.SheetNames).toEqual(["요약", "24년", "25년"]);
+  expect(workbook.SheetNames).toEqual(["요약", "24년"]);
   expect(workbook.Sheets["요약"]["A2"].v).toBe("부천공업");
   expect(workbook.Sheets["요약"]["G2"].v).toBe("감사대상");
   const archive = unzipSync(bytes);

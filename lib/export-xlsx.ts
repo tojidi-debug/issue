@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx-js-style";
 import type { ReviewCandidate } from "./domain";
-import { formatAmountRange, groupReviewCandidates } from "./group-review";
+import { groupReviewCandidates } from "./group-review";
 
 const DETAIL_COLUMNS = [
   "연도", "위험도", "인증대상 구분", "매칭 회사", "거래일자", "전표번호", "거래처",
@@ -31,10 +31,10 @@ function toDetailRow(candidate: ReviewCandidate): Record<string, string | number
 
 function toSummaryRows(candidates: ReviewCandidate[]): Record<string, string | number>[] {
   return groupReviewCandidates(candidates).map((group) => ({
-    회사: group.matchedCompany, 연도: group.year, 위험도: group.risk,
+    회사: group.matchedCompany, 연도: group.years.join(", "), 위험도: group.risk,
     인증대상: group.targetKind,
     "검토대상 기간": group.dateFrom === group.dateTo ? group.dateFrom : `${group.dateFrom}~${group.dateTo}`,
-    "검토 전표 요약": `${group.serviceClass} ${group.transactionCount}건 · 건당 ${formatAmountRange(group.amountMin, group.amountMax)} · ${group.memos.slice(0, 4).join(", ")}`,
+    "검토 전표 요약": group.summaryText,
     "대상 판단 근거": group.attestationEvidence || group.targetSource,
     매칭근거: group.matchBasis, 확인필요사항: group.issue,
     "공급가액 합계": group.totalAmount, "부가세 합계": group.vatTotal, 합계: group.grossTotal,
@@ -70,7 +70,8 @@ export function buildReviewWorkbook(candidates: ReviewCandidate[]): Uint8Array {
   applyBaseStyle(summary, SUMMARY_COLUMNS.length);
   XLSX.utils.book_append_sheet(workbook, summary, "요약");
 
-  for (const year of [2024, 2025]) {
+  const years = [...new Set(candidates.map((candidate) => candidate.year))].sort();
+  for (const year of years) {
     const rows = candidates.filter((candidate) => candidate.year === year).map(toDetailRow);
     const sheet = XLSX.utils.json_to_sheet(rows, { header: [...DETAIL_COLUMNS] });
     sheet["!cols"] = [8, 8, 14, 20, 12, 12, 22, 16, 12, 28, 16, 14, 12, 14, 24, 32, 24, 44, 38, 64].map((wch) => ({ wch }));
