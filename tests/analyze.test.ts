@@ -112,4 +112,35 @@ describe("analyzeIndependence", () => {
     });
     expect(result.candidates[0].note).toContain("계약서");
   });
+
+  it("matches prohibited services only to the same audit year", () => {
+    const transaction = tx({ year: 2022, date: "2022-05-31", memo: "기장료" });
+    expect(
+      analyzeIndependence([transaction], [auditClient({ year: 2022 })]).candidates,
+    ).toHaveLength(1);
+    expect(
+      analyzeIndependence([transaction], [auditClient({ year: 2021 })]).candidates,
+    ).toHaveLength(0);
+  });
+
+  it("allows a separate attestation service in the same year", () => {
+    const transaction = tx({ year: 2022, date: "2022-03-31", memo: "기업진단수수료" });
+    expect(
+      analyzeIndependence([transaction], [auditClient({ year: 2022 })]).candidates,
+    ).toHaveLength(0);
+  });
+
+  it("applies a three-year cooling period to internal-control system builds", () => {
+    const transaction = tx({
+      year: 2019,
+      date: "2019-06-30",
+      memo: "내부통제 및 회계시스템 구축 용역",
+    });
+    expect(
+      analyzeIndependence([transaction], [auditClient({ year: 2022 })]).candidates,
+    ).toHaveLength(1);
+    expect(
+      analyzeIndependence([transaction], [auditClient({ year: 2023 })]).candidates,
+    ).toHaveLength(0);
+  });
 });

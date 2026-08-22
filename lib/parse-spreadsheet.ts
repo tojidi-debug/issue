@@ -37,6 +37,11 @@ function headerKey(value: unknown): string {
   return cleanText(value).replace(/[\s()[\]·]/g, "");
 }
 
+function parseYearValue(value: unknown): number | undefined {
+  const match = cleanText(value).match(/20\d{2}/);
+  return match ? Number(match[0]) : undefined;
+}
+
 function isNonExternalAudit(...values: unknown[]): boolean {
   const text = values.map(cleanText).join(" ");
   return /아파트|공동\s*주택|주택법|비외감|비\s*외감|임의\s*감사|자율\s*감사/i.test(text);
@@ -210,6 +215,7 @@ export function parseAttestationRows(
       business: keys.findIndex((key) => ["사업자등록번호", "사업자번호"].includes(key)),
       corporate: keys.findIndex((key) => ["법인등록번호", "법인번호"].includes(key)),
       relationship: keys.findIndex((key) => ["관계", "구분", "연결관계"].includes(key)),
+      year: keys.findIndex((key) => ["사업연도", "연도", "회계연도", "감사연도"].includes(key)),
     };
     break;
   }
@@ -241,6 +247,10 @@ export function parseAttestationRows(
       corporateNumber:
         indexes.corporate >= 0 ? normalizeCorporateNumber(row[indexes.corporate]) : "",
       kind,
+      year:
+        indexes.year >= 0
+          ? parseYearValue(row[indexes.year])
+          : detectYear(`${sourceFile} ${sheetName}`),
       source: `${sourceFile || "업로드 파일"} / ${sheetName}!${rowIndex + 1}`,
       relatedTo:
         indexes.relationship >= 0 ? cleanText(row[indexes.relationship]) : undefined,
@@ -270,6 +280,7 @@ function parseReferenceFallback(
       businessNumber: normalizeBusinessNumber(businessValue),
       corporateNumber: "",
       kind: "외부감사",
+      year: detectYear(`${sourceFile} ${sheetName}`),
       source: `${sourceFile} / ${sheetName}!${rowIndex + 1}`,
       relatedTo: detail || undefined,
     });

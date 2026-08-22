@@ -53,6 +53,7 @@ describe("parseAttestationRows", () => {
         businessNumber: "1308123676",
         corporateNumber: "1101111234567",
         kind: "외부감사",
+        year: undefined,
       },
     ]);
   });

@@ -34,6 +34,11 @@ function buildNote(
     };
   }
   const notes: Partial<Record<ServiceClass, { issue: string; note: string }>> = {
+    "내부통제·회계시스템 구축": {
+      issue: "외부감사 전 3년 이내 내부통제·회계시스템 구축 여부 확인",
+      note:
+        "감사인이 구축한 내부통제 또는 회계시스템을 스스로 감사하는 자기검토 위협이 있을 수 있습니다. 구축 완료일, 최초 감사대상연도와 3년 냉각기간 경과 여부를 확인하세요.",
+    },
     "기장·전표처리": {
       issue: "감사대상회사 기장·전표처리 여부 확인",
       note:
@@ -113,34 +118,54 @@ export function analyzeIndependence(
   const candidates: ReviewCandidate[] = [];
   let matchedTransactions = 0;
   for (const transaction of transactions) {
-    const auditMatch = matchAttestationClient(transaction, clients);
-    const diagnostic = diagnostics.get(`${transaction.year}:${diagnosticKey(transaction)}`);
-    if (!auditMatch && !diagnostic) continue;
-    matchedTransactions += 1;
     const classification = classifyService(
       transaction.memo,
       transaction.account,
       transaction.section,
     );
+    const sameYearClients = clients.filter(
+      (client) => client.year === undefined || client.year === transaction.year,
+    );
+    const coolingClients =
+      classification.serviceClass === "내부통제·회계시스템 구축"
+        ? clients.filter(
+            (client) =>
+              client.kind === "외부감사" &&
+              client.year !== undefined &&
+              client.year > transaction.year &&
+              client.year - transaction.year <= 3,
+          )
+        : [];
+    const auditMatch =
+      matchAttestationClient(transaction, sameYearClients) ??
+      matchAttestationClient(transaction, coolingClients);
+    const diagnostic = diagnostics.get(`${transaction.year}:${diagnosticKey(transaction)}`);
+    if (!auditMatch && !diagnostic) continue;
+    matchedTransactions += 1;
     if (
-      ["허용 세무조정·세금신고", "외부감사", "기타"].includes(
+      ["허용 세무조정·세금신고", "외부감사", "기업진단·인증", "기타"].includes(
         classification.serviceClass,
       )
     ) {
       continue;
     }
-    if (classification.serviceClass === "기업진단·인증" && !auditMatch) continue;
-
     const targetKind: TargetKind =
-      auditMatch && diagnostic
+      auditMatch?.client.kind === "외부감사" && diagnostic
         ? "감사·기업진단"
-        : auditMatch
-          ? "외부감사"
+        : auditMatch?.client.kind
+          ? auditMatch.client.kind
           : "기업진단";
     const matchedCompany =
       auditMatch?.client.canonicalName ?? diagnostic?.client.canonicalName ?? transaction.clientName;
+    const coolingBasis =
+      classification.serviceClass === "내부통제·회계시스템 구축" &&
+      auditMatch?.client.year !== undefined &&
+      auditMatch.client.year !== transaction.year
+        ? `${auditMatch.client.year}년 외부감사 전 ${auditMatch.client.year - transaction.year}년 이내 구축업무`
+        : "";
     const matchBasis = [
       auditMatch?.basis,
+      coolingBasis,
       diagnostic
         ? normalizeBusinessNumber(transaction.businessNumber)
           ? "기업진단 거래 사업자번호 일치"

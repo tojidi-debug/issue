@@ -5,6 +5,16 @@ const RULES: Array<{
   result: ServiceClassification;
 }> = [
   {
+    pattern:
+      /내부\s*통제.*(?:구축|설계|도입)|회계\s*시스템.*(?:구축|설계|도입)|erp.*(?:구축|설계|도입)|결산\s*시스템.*(?:구축|설계|도입)/i,
+    result: {
+      serviceClass: "내부통제·회계시스템 구축",
+      risk: "상",
+      reviewRequired: true,
+      reason: "구축한 내부통제·회계시스템에 대한 자기검토 위협 가능성",
+    },
+  },
+  {
     pattern: /기장|장부|전표\s*처리|회계처리\s*대행|세무기장/i,
     result: {
       serviceClass: "기장·전표처리",
