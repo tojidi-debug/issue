@@ -1,4 +1,3 @@
-import * as pdfjs from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import type { FileRole, ParsedFileResult, Transaction } from "./domain";
 import { normalizeBusinessNumber, parseDateValue, toNumber } from "./normalize";
@@ -109,6 +108,7 @@ export async function parsePdf(
   role: FileRole,
   override: { year?: number; accountant?: string } = {},
 ): Promise<ParsedFileResult> {
+  const pdfjs = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
   const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
   const year = yearFromName(file.name, override.year);

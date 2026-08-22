@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   AnalysisResult,
   AttestationClient,
@@ -186,6 +186,11 @@ function ReviewTable({ rows }: { rows: ReviewGroup[] }) {
   );
 }
 export default function Home() {
+  useEffect(() => {
+    // Load the PDF engine while this deployment's hashed assets are available.
+    // Later PDF uploads reuse the cached module instead of requesting a stale chunk.
+    void import("pdfjs-dist").catch(() => undefined);
+  }, []);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [progress, setProgress] = useState(0);
   const [processing, setProcessing] = useState(false);
