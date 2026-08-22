@@ -191,11 +191,25 @@ export default function Home() {
   const [riskFilter, setRiskFilter] = useState<"all" | "상" | "중">("all");
   const [query, setQuery] = useState("");
 
-  const addFiles = (files: File[], role: FileRole) => {
+  const addFiles = async (files: File[], role: FileRole) => {
     const supported = files.filter((file) => /\.(pdf|xls|xlsx|csv)$/i.test(file.name));
+    let memoryFiles: File[];
+    try {
+      memoryFiles = await Promise.all(
+        supported.map(async (file) =>
+          new File([await file.arrayBuffer()], file.name, {
+            type: file.type,
+            lastModified: file.lastModified,
+          }),
+        ),
+      );
+    } catch {
+      setWarnings(["선택한 파일을 읽을 수 없습니다. 파일을 다시 선택하세요."]);
+      return;
+    }
     setQueue((current) => [
       ...current,
-      ...supported.map((file) => ({ file, role, status: "대기" as const })),
+      ...memoryFiles.map((file) => ({ file, role, status: "대기" as const })),
     ]);
     setAnalysis(null);
   };
@@ -264,7 +278,10 @@ export default function Home() {
           ),
         );
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const rawMessage = error instanceof Error ? error.message : String(error);
+        const message = /requested file could not be read|permission problems/i.test(rawMessage)
+          ? "브라우저의 파일 읽기 권한이 만료되었습니다. 이 파일을 다시 첨부하세요."
+          : rawMessage;
         messages.push(`${queue[index].file.name}: ${message}`);
         setQueue((current) =>
           current.map((item, itemIndex) =>
