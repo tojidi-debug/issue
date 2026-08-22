@@ -177,7 +177,9 @@ main {
 
 .file-group-heading h2 {
   margin: 0;
+  color: var(--navy);
   font-size: 0.82rem;
+  font-weight: 900;
 }
 
 .file-group-heading span {
