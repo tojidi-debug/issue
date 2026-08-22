@@ -152,8 +152,7 @@ export function groupReviewCandidates(rows: ReviewCandidate[]): ReviewGroup[] {
       })
       .join(", ");
     group.summaryText =
-      `${group.targetKind} 대상인 ${group.matchedCompany}: ${yearlyText} 등 확인 필요. ` +
-      "계약서·세금계산서·산출물을 확인하여 실제 업무 성격과 경영진 의사결정 또는 회계장부 작성 관여 여부를 확인해야 합니다.";
+      `${group.targetKind} 대상인 ${group.matchedCompany}: ${yearlyText} 등 확인 필요.`;
   }
   return [...groups.values()].sort((a, b) =>
     a.year - b.year || (a.risk === b.risk ? 0 : a.risk === "상" ? -1 : 1) ||

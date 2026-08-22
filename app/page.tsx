@@ -107,6 +107,9 @@ function Summary({ analysis }: { analysis: AnalysisResult }) {
           {label}
         </span>
       ))}
+      <span className="summary-guidance">
+        계약서·세금계산서·산출물을 확인하여 실제 업무 성격과 경영진 의사결정 또는 회계장부 작성 관여 여부를 확인해야 합니다.
+      </span>
     </div>
   );
 }

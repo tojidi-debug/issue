@@ -533,6 +533,15 @@ tbody tr:hover td { background: color-mix(in oklch, var(--navy) 5%, var(--surfac
   font-size: 0.69rem;
   line-height: 1.58;
 }
+
+.summary-guidance {
+  align-self: center;
+  margin-left: 4px;
+  color: var(--navy);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
 .cell-inline { gap: 6px; }
 
 .risk-badge {
