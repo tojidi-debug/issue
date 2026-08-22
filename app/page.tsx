@@ -128,7 +128,7 @@ function ReviewTable({ rows }: { rows: ReviewGroup[] }) {
         <thead>
           <tr>
             <th>위험 · 대상회사</th>
-            <th>검토 전표 묶음</th>
+            <th>회사별 주요사항</th>
             <th>대상 판단 근거</th>
             <th>확인 필요사항</th>
             <th>원본 · 검토 비고</th>
@@ -141,19 +141,17 @@ function ReviewTable({ rows }: { rows: ReviewGroup[] }) {
                 <div className="cell-stack">
                   <div className="cell-inline">
                     <span className={`risk-badge risk-${row.risk}`}>{row.risk}</span>
-                    <span className="quiet-label">{row.targetKind} · {row.year}년</span>
+                    <span className="quiet-label">{row.targetKind} · {row.years.join("·")}년</span>
                   </div>
                   <strong className="company-name">{row.matchedCompany}</strong>
                   <span>{row.accountants.join(", ") || "담당자 미인식"}</span>
                 </div>
               </td>
               <td>
-                <div className="cell-stack">
-                  <strong>{row.dateFrom === row.dateTo ? row.dateFrom : `${row.dateFrom}~${row.dateTo}`}</strong>
-                  <span>{row.serviceClass} · {formatMoney(row.transactionCount)}건</span>
-                  <span>건당 {formatAmountRange(row.amountMin, row.amountMax)}</span>
-                  <span className="amount">공급가액 합계 {formatMoney(row.totalAmount)}원</span>
-                  <span>{row.memos.slice(0, 4).join(", ")}</span>
+                <div className="cell-stack company-summary">
+                  <strong>{row.legalBasis}</strong>
+                  <p>{row.summaryText}</p>
+                  <span>{formatMoney(row.transactionCount)}건 · 건당 {formatAmountRange(row.amountMin, row.amountMax)}</span>
                 </div>
               </td>
               <td>
@@ -165,6 +163,7 @@ function ReviewTable({ rows }: { rows: ReviewGroup[] }) {
               <td>
                 <div className="cell-stack">
                   <strong>{row.issue}</strong>
+                  <span>{row.serviceClasses.join(" · ")}</span>
                   <span>{row.note}</span>
                 </div>
               </td>

@@ -519,6 +519,13 @@ tbody tr:hover td { background: color-mix(in oklch, var(--navy) 5%, var(--surfac
 .cell-stack > span,
 .source-text { color: var(--muted); }
 .evidence-cell strong { color: var(--navy); }
+.company-summary strong { color: var(--red); }
+.company-summary p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.69rem;
+  line-height: 1.58;
+}
 .cell-inline { gap: 6px; }
 
 .risk-badge {

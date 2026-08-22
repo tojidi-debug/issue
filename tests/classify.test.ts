@@ -33,4 +33,12 @@ describe("classifyService", () => {
       reviewRequired: true,
     });
   });
+
+  it("flags management decision-making consulting", () => {
+    expect(classifyService("경영진 의사결정 및 거래 승인 대행 용역")).toMatchObject({
+      serviceClass: "회계자문·컨설팅",
+      risk: "상",
+      reviewRequired: true,
+    });
+  });
 });

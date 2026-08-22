@@ -65,4 +65,16 @@ describe("parseAttestationRows", () => {
     ];
     expect(parseAttestationRows(rows, "2026년 수임신고 외감", "engagement.xlsx")).toHaveLength(2);
   });
+
+  it("excludes apartment and other explicitly non-external audits", () => {
+    const rows = [
+      ["구분", "회사명", "사업자등록번호"],
+      ["외부감사", "정상산업", "111-22-33333"],
+      ["아파트감사", "한빛아파트", "444-55-66666"],
+      ["비외감 임의감사", "새봄조합", "777-88-99999"],
+    ];
+    expect(parseAttestationRows(rows, "감사업무 현황", "engagement.xlsx")).toMatchObject([
+      { canonicalName: "정상산업", kind: "외부감사" },
+    ]);
+  });
 });

@@ -35,12 +35,12 @@ const RULES: Array<{
   },
   {
     pattern:
-      /회계\s*자문|회계처리\s*자문|재무\s*자문|컨설팅|재무\s*실사|due\s*diligence|m&a|인수\s*자문|매각\s*자문|양수도\s*자문/i,
+      /경영진?\s*(?:역할|의사결정|판단)|임원\s*(?:역할|의사결정)|거래\s*승인|업무\s*집행|회계\s*자문|회계처리\s*자문|재무\s*자문|컨설팅|재무\s*실사|due\s*diligence|m&a|인수\s*자문|매각\s*자문|양수도\s*자문/i,
     result: {
       serviceClass: "회계자문·컨설팅",
       risk: "상",
       reviewRequired: true,
-      reason: "재무정보에 영향을 미치는 자문·컨설팅 가능성",
+      reason: "경영진 의사결정 또는 재무정보에 영향을 미치는 자문·컨설팅 가능성",
     },
   },
   {

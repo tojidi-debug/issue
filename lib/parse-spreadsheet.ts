@@ -37,6 +37,11 @@ function headerKey(value: unknown): string {
   return cleanText(value).replace(/[\s()[\]·]/g, "");
 }
 
+function isNonExternalAudit(...values: unknown[]): boolean {
+  const text = values.map(cleanText).join(" ");
+  return /아파트|공동\s*주택|주택법|비외감|비\s*외감|임의\s*감사|자율\s*감사/i.test(text);
+}
+
 function findHeader(rows: Row[]): { rowIndex: number; indexes: Record<string, number> } | null {
   for (let rowIndex = 0; rowIndex < Math.min(rows.length, 50); rowIndex += 1) {
     const keys = rows[rowIndex].map(headerKey);
@@ -216,6 +221,7 @@ export function parseAttestationRows(
     const row = rows[rowIndex];
     const canonicalName = cleanText(row[indexes.company]);
     const normalizedName = normalizeCompanyName(canonicalName);
+    if (isNonExternalAudit(sourceFile, sheetName, ...row)) continue;
     if (!canonicalName || normalizedName.length < 2 || /회사명|해당사항없음/.test(canonicalName)) {
       continue;
     }
@@ -245,7 +251,11 @@ function parseReferenceFallback(
   const add = (nameValue: unknown, businessValue: unknown, rowIndex: number, detail = "") => {
     const canonicalName = cleanText(nameValue);
     const normalizedName = normalizeCompanyName(canonicalName);
-    if (!canonicalName || normalizedName.length < 2) return;
+    if (
+      !canonicalName ||
+      normalizedName.length < 2 ||
+      isNonExternalAudit(sourceFile, sheetName, canonicalName, detail)
+    ) return;
     clients.push({
       id: `${sourceFile}:${sheetName}:${rowIndex + 1}:${clients.length}`,
       canonicalName,

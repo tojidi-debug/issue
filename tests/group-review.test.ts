@@ -39,4 +39,28 @@ describe("groupReviewCandidates", () => {
     expect(formatAmountRange(130000, 130000)).toBe("130,000원");
     expect(formatAmountRange(130000, 150000)).toBe("130,000~150,000원");
   });
+
+  it("produces one company-level summary across different risky services", () => {
+    const groups = groupReviewCandidates([
+      candidate({ targetKind: "외부감사", matchedCompany: "A사" }),
+      candidate({
+        id: "a-consulting",
+        targetKind: "외부감사",
+        matchedCompany: "A사",
+        date: "2025-06-20",
+        memo: "기타용역수수료",
+        serviceClass: "회계자문·컨설팅",
+        issue: "자문 성격 확인",
+      }),
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].serviceClasses).toEqual([
+      "기장·전표처리",
+      "회계자문·컨설팅",
+    ]);
+    expect(groups[0].legalBasis).toBe("외부감사법상 독립성 검토 후보");
+    expect(groups[0].summaryText).toContain("월평균");
+    expect(groups[0].summaryText).toContain("기타용역수수료");
+  });
 });
