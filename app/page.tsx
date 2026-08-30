@@ -38,8 +38,8 @@ function FileDropzone({
   return (
     <section className="file-group" aria-labelledby={`${inputId}-title`}>
       <div className="file-group-heading">
-        <h2 id={`${inputId}-title`}>대사 파일 통합 업로드</h2>
-        <span>PDF · Excel · CSV</span>
+        <h2 id={`${inputId}-title`}>파일 첨부</h2>
+        <span>{items.length}개 · PDF · Excel · CSV 통합 첨부</span>
       </div>
       <label
         className="compact-dropzone"
@@ -368,50 +368,24 @@ export default function Home() {
         </p>
       </header>
 
-      <div className="tool-tabs" aria-label="업무 메뉴">
-        <strong>독립성 대사</strong>
-      </div>
-
       <div className="workspace">
-        <section className="intro-card">
-          <div>
-            <h2>독립성 대사</h2>
-            <p>사전제출자료와 구성원 매출장을 자동으로 구분하여 독립성 검토가 필요한 내역을 회사별로 대사합니다.</p>
-          </div>
-          <ul>
-            <li>PDF · Excel · CSV 통합 첨부</li>
-            <li>파일명 · 시트명 · 표 머리글 기준 자동 분류</li>
-            <li>동일 거래와 동일 회사 중복 제거</li>
-          </ul>
-        </section>
-
         <aside className="input-panel">
           <div className="panel-heading">
             <div>
-              <h2>파일 첨부</h2>
-              <p>파일을 한 번에 넣으면 자료 성격을 자동 판별합니다.</p>
+              <h2>독립성 대사</h2>
+              <p>사전제출자료와 매출장 대사 후 특이사항 추출</p>
             </div>
-            <span className="file-count">{queue.length}개</span>
           </div>
 
-          <FileDropzone
-            items={queue}
-            onAdd={addFiles}
-            onRemove={(index) => setQueue((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-          />
-
-          <div className="run-area">
-            <p className={`readiness ${readyToRun ? "readiness-ready" : ""}`}>
-              {readyToRun
-                ? "첨부 후 대사 실행을 누르면 자료를 자동 분류합니다."
-                : "사전제출자료와 매출장을 한 곳에 함께 첨부하세요."}
-            </p>
-            <div className="progress-line" aria-label={`진행률 ${progress}%`}>
-              <span style={{ transform: `scaleX(${progress / 100})` }} />
-            </div>
-            <div className="action-row">
+          <div className="upload-workbench">
+            <FileDropzone
+              items={queue}
+              onAdd={addFiles}
+              onRemove={(index) => setQueue((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+            />
+            <div className="action-row action-side">
               <button
-                className={`primary-button ${analysis ? "primary-button-complete" : ""}`}
+                className="primary-button"
                 type="button"
                 onClick={processFiles}
                 disabled={processing || !readyToRun}
@@ -435,6 +409,16 @@ export default function Home() {
               >
                 새로고침
               </button>
+            </div>
+          </div>
+          <div className="run-area">
+            <p className={`readiness ${readyToRun ? "readiness-ready" : ""}`}>
+              {readyToRun
+                ? "첨부 후 대사 실행을 누르면 자료를 자동 분류합니다."
+                : "사전제출자료와 매출장을 한 곳에 함께 첨부하세요."}
+            </p>
+            <div className="progress-line" aria-label={`진행률 ${progress}%`}>
+              <span style={{ transform: `scaleX(${progress / 100})` }} />
             </div>
           </div>
 

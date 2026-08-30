@@ -770,3 +770,50 @@ main { height: auto; min-height: 100vh; overflow: visible; background: var(--can
   .run-area { grid-template-columns: 1fr; }
   .progress-line { grid-column: 1; }
 }
+
+/* Compact combined upload card */
+.input-panel .panel-heading {
+  justify-content: flex-start;
+  margin-bottom: 12px;
+}
+.input-panel .panel-heading > div {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.input-panel .panel-heading p { margin: 0; }
+.upload-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px;
+  align-items: end;
+  gap: 12px;
+}
+.upload-workbench .file-group { min-width: 0; }
+.upload-workbench .compact-dropzone { min-height: 120px; }
+.action-row.action-side {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+.action-row.action-side button {
+  width: 100%;
+  min-height: 36px;
+}
+.action-row.action-side .primary-button {
+  border-color: oklch(0.27 0.075 252);
+  background: oklch(0.27 0.075 252);
+  box-shadow: 0 5px 12px color-mix(in oklch, var(--navy) 25%, transparent);
+}
+.input-panel .run-area {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  margin-top: 10px;
+}
+.input-panel .progress-line { grid-column: 1; }
+
+@media (max-width: 680px) {
+  .upload-workbench { grid-template-columns: 1fr; }
+  .action-row.action-side { grid-template-columns: 1fr 1fr 1fr; }
+}
