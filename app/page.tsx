@@ -10,13 +10,13 @@ import type {
 } from "@/lib/domain";
 import { analyzeIndependence } from "@/lib/analyze";
 import { downloadReviewWorkbook } from "@/lib/export-xlsx";
-import { parseInputFile } from "@/lib/parse-input";
+import { parseInputFile, parseInputFileAuto } from "@/lib/parse-input";
 import { getReasonTone } from "@/lib/presentation";
 import { formatAmountRange, groupReviewCandidates, type ReviewGroup } from "@/lib/group-review";
 
 type QueueItem = {
   file: File;
-  role: FileRole;
+  role: FileRole | "auto";
   status: "대기" | "처리중" | "완료" | "경고" | "실패";
   detail?: string;
 };
@@ -26,23 +26,19 @@ function formatMoney(value: number): string {
 }
 
 function FileDropzone({
-  title,
-  role,
   items,
   onAdd,
   onRemove,
 }: {
-  title: string;
-  role: FileRole;
   items: QueueItem[];
-  onAdd: (files: File[], role: FileRole) => void;
+  onAdd: (files: File[]) => void;
   onRemove: (index: number) => void;
 }) {
-  const inputId = `files-${role}`;
+  const inputId = "files-auto";
   return (
     <section className="file-group" aria-labelledby={`${inputId}-title`}>
       <div className="file-group-heading">
-        <h2 id={`${inputId}-title`}>{title}</h2>
+        <h2 id={`${inputId}-title`}>대사 파일 통합 업로드</h2>
         <span>PDF · Excel · CSV</span>
       </div>
       <label
@@ -51,7 +47,7 @@ function FileDropzone({
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
-          onAdd(Array.from(event.dataTransfer.files), role);
+          onAdd(Array.from(event.dataTransfer.files));
         }}
       >
         <span className="add-symbol" aria-hidden="true">＋</span>
@@ -64,7 +60,7 @@ function FileDropzone({
         accept=".pdf,.xls,.xlsx,.csv"
         multiple
         onChange={(event) => {
-          onAdd(Array.from(event.target.files ?? []), role);
+          onAdd(Array.from(event.target.files ?? []));
           event.currentTarget.value = "";
         }}
       />
@@ -76,6 +72,7 @@ function FileDropzone({
                 <strong title={item.file.name}>{item.file.name}</strong>
                 <span>
                   {(item.file.size / 1024 / 1024).toFixed(1)} MB
+                  {item.role !== "auto" ? ` · ${item.role === "reference" ? "사전제출자료" : "매출장"}` : " · 자동 분류 대기"}
                   {item.detail ? ` · ${item.detail}` : ""}
                 </span>
               </div>
@@ -200,7 +197,7 @@ export default function Home() {
   const [riskFilter, setRiskFilter] = useState<"all" | "상" | "중">("all");
   const [query, setQuery] = useState("");
 
-  const addFiles = async (files: File[], role: FileRole) => {
+  const addFiles = async (files: File[]) => {
     const supported = files.filter((file) => /\.(pdf|xls|xlsx|csv)$/i.test(file.name));
     let memoryFiles: File[];
     try {
@@ -218,7 +215,7 @@ export default function Home() {
     }
     setQueue((current) => [
       ...current,
-      ...memoryFiles.map((file) => ({ file, role, status: "대기" as const })),
+      ...memoryFiles.map((file) => ({ file, role: "auto" as const, status: "대기" as const })),
     ]);
     setAnalysis(null);
   };
@@ -235,9 +232,7 @@ export default function Home() {
   };
 
   const processFiles = async () => {
-    const hasReference = queue.some((item) => item.role === "reference");
-    const hasSales = queue.some((item) => item.role === "sales");
-    if (processing || !hasReference || !hasSales) return;
+    if (processing || queue.length === 0) return;
     setProcessing(true);
     setProgress(0);
     setAnalysis(null);
@@ -254,15 +249,20 @@ export default function Home() {
         ),
       );
       try {
-        const result: ParsedFileResult = await parseInputFile(
-          queue[index].file,
-          queue[index].role,
-        );
+        const queuedItem = queue[index];
+        const parsed = queuedItem.role === "auto"
+          ? await parseInputFileAuto(queuedItem.file)
+          : {
+              role: queuedItem.role,
+              result: await parseInputFile(queuedItem.file, queuedItem.role),
+            };
+        const result: ParsedFileResult = parsed.result;
+        const detectedRole = parsed.role;
         sharedYear ??= result.detectedYear;
         transactions.push(...result.transactions);
         clients.push(...result.clients);
         const shouldRetryWithSharedYear =
-          queue[index].role === "sales" &&
+          detectedRole === "sales" &&
           result.transactions.length === 0 &&
           result.detectedYear === undefined;
         if (shouldRetryWithSharedYear) {
@@ -277,9 +277,10 @@ export default function Home() {
             itemIndex === index
               ? {
                   ...item,
+                  role: detectedRole,
                   status: result.warnings.length ? "경고" : "완료",
                   detail:
-                    item.role === "sales"
+                    detectedRole === "sales"
                       ? `${formatMoney(result.transactions.length)}건`
                       : `${formatMoney(result.clients.length)}개사`,
                 }
@@ -308,7 +309,7 @@ export default function Home() {
         );
         continue;
       }
-      const retried = await parseInputFile(item.file, item.role, { year: sharedYear });
+      const retried = await parseInputFile(item.file, "sales", { year: sharedYear });
       transactions.push(...retried.transactions);
       retried.warnings.forEach((warning) =>
         messages.push(`${retried.fileName}: ${warning.message}`),
@@ -325,7 +326,9 @@ export default function Home() {
         ),
       );
     }
-    setWarnings(messages);
+    if (clients.length === 0) messages.push("사전제출자료로 인식된 대상회사 자료가 없습니다.");
+    if (transactions.length === 0) messages.push("매출장으로 인식된 거래 자료가 없습니다.");
+    setWarnings([...new Set(messages)]);
     setAnalysis(analyzeIndependence(transactions, clients));
     setProcessing(false);
   };
@@ -349,19 +352,15 @@ export default function Home() {
 
   const grouped = useMemo(() => groupReviewCandidates(filtered), [filtered]);
 
-  const references = queue
-    .map((item, index) => ({ item, index }))
-    .filter(({ item }) => item.role === "reference");
-  const sales = queue
-    .map((item, index) => ({ item, index }))
-    .filter(({ item }) => item.role === "sales");
-  const readyToRun = references.length > 0 && sales.length > 0;
+  const readyToRun = queue.length > 0;
 
   return (
     <main>
       <header className="compact-header">
         <div>
-          <h1>감사·인증 독립성 검토</h1>
+          <span className="brand-mark" aria-hidden="true">◆</span>
+          <h1>업무 조회</h1>
+          <span>INDEPENDENCE REVIEW HUB</span>
         </div>
         <p className="local-note">
           <span aria-hidden="true" />
@@ -369,51 +368,50 @@ export default function Home() {
         </p>
       </header>
 
+      <div className="tool-tabs" aria-label="업무 메뉴">
+        <strong>독립성 대사</strong>
+      </div>
+
       <div className="workspace">
+        <section className="intro-card">
+          <div>
+            <h2>독립성 대사</h2>
+            <p>사전제출자료와 구성원 매출장을 자동으로 구분하여 독립성 검토가 필요한 내역을 회사별로 대사합니다.</p>
+          </div>
+          <ul>
+            <li>PDF · Excel · CSV 통합 첨부</li>
+            <li>파일명 · 시트명 · 표 머리글 기준 자동 분류</li>
+            <li>동일 거래와 동일 회사 중복 제거</li>
+          </ul>
+        </section>
+
         <aside className="input-panel">
           <div className="panel-heading">
             <div>
               <h2>파일 첨부</h2>
-              <p>기준자료와 매출장을 함께 선택하세요.</p>
+              <p>파일을 한 번에 넣으면 자료 성격을 자동 판별합니다.</p>
             </div>
             <span className="file-count">{queue.length}개</span>
           </div>
 
           <FileDropzone
-            title="기준자료(사전제출자료 등)"
-            role="reference"
-            items={references.map(({ item }) => item)}
+            items={queue}
             onAdd={addFiles}
-            onRemove={(localIndex) =>
-              setQueue((current) =>
-                current.filter((_, index) => index !== references[localIndex].index),
-              )
-            }
-          />
-          <FileDropzone
-            title="구성원 매출장"
-            role="sales"
-            items={sales.map(({ item }) => item)}
-            onAdd={addFiles}
-            onRemove={(localIndex) =>
-              setQueue((current) =>
-                current.filter((_, index) => index !== sales[localIndex].index),
-              )
-            }
+            onRemove={(index) => setQueue((current) => current.filter((_, itemIndex) => itemIndex !== index))}
           />
 
           <div className="run-area">
             <p className={`readiness ${readyToRun ? "readiness-ready" : ""}`}>
               {readyToRun
-                ? "필수자료가 준비되었습니다."
-                : "기준자료와 구성원 매출장을 각각 1개 이상 첨부하세요."}
+                ? "첨부 후 대사 실행을 누르면 자료를 자동 분류합니다."
+                : "사전제출자료와 매출장을 한 곳에 함께 첨부하세요."}
             </p>
             <div className="progress-line" aria-label={`진행률 ${progress}%`}>
               <span style={{ transform: `scaleX(${progress / 100})` }} />
             </div>
             <div className="action-row">
               <button
-                className="primary-button"
+                className={`primary-button ${analysis ? "primary-button-complete" : ""}`}
                 type="button"
                 onClick={processFiles}
                 disabled={processing || !readyToRun}

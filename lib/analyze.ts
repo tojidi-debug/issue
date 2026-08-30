@@ -87,6 +87,35 @@ export function analyzeIndependence(
   transactions: Transaction[],
   clients: AttestationClient[],
 ): AnalysisResult {
+  const transactionKeys = new Set<string>();
+  transactions = transactions.filter((transaction) => {
+    const key = [
+      transaction.year,
+      transaction.date,
+      transaction.voucherNo,
+      normalizeCompanyName(transaction.clientName),
+      normalizeBusinessNumber(transaction.businessNumber),
+      transaction.memo.replace(/\s+/g, ""),
+      transaction.account.replace(/\s+/g, ""),
+      transaction.amount,
+      transaction.vat,
+      transaction.total,
+    ].join("|");
+    if (transactionKeys.has(key)) return false;
+    transactionKeys.add(key);
+    return true;
+  });
+  const clientKeys = new Set<string>();
+  clients = clients.filter((client) => {
+    const key = [
+      client.kind,
+      client.year ?? "",
+      client.businessNumber || client.corporateNumber || client.normalizedName,
+    ].join("|");
+    if (clientKeys.has(key)) return false;
+    clientKeys.add(key);
+    return true;
+  });
   const diagnostics = new Map<string, DiagnosticEvidence>();
   for (const transaction of transactions) {
     if (classifyService(transaction.memo, transaction.account, transaction.section).serviceClass !== "기업진단·인증") {

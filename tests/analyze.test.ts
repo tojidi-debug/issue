@@ -143,4 +143,14 @@ describe("analyzeIndependence", () => {
       analyzeIndependence([transaction], [auditClient({ year: 2023 })]).candidates,
     ).toHaveLength(0);
   });
+
+  it("removes identical transactions before producing review candidates", () => {
+    const duplicate = tx({ memo: "기장료" });
+    const result = analyzeIndependence(
+      [duplicate, { ...duplicate, id: "duplicate-copy", sourceLocation: "copy.xlsx / Sheet1!2" }],
+      [auditClient()],
+    );
+    expect(result.summary.totalTransactions).toBe(1);
+    expect(result.candidates).toHaveLength(1);
+  });
 });
