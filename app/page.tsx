@@ -50,7 +50,7 @@ function FileDropzone({
           onAdd(Array.from(event.dataTransfer.files));
         }}
       >
-        <span className="add-symbol" aria-hidden="true">＋</span>
+        <span className="folder-icon" aria-hidden="true">📁</span>
         <span>파일 선택 또는 끌어놓기</span>
       </label>
       <input

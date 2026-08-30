@@ -731,6 +731,17 @@ main { height: auto; min-height: 100vh; overflow: visible; background: var(--can
 }
 .input-panel { min-height: auto; overflow: visible; padding: 20px; border-right: 1px solid color-mix(in oklch, var(--navy) 20%, var(--line)); background: var(--surface); }
 .compact-dropzone { min-height: 78px; }
+.compact-dropzone {
+  flex-direction: column;
+  gap: 5px;
+}
+.folder-icon {
+  display: block;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+  font-size: 1.75rem;
+  line-height: 1;
+  filter: saturate(1.12);
+}
 .run-area {
   grid-template-columns: minmax(220px, 1fr) auto;
   align-items: end;
