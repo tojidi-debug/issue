@@ -786,7 +786,7 @@ main { height: auto; min-height: 100vh; overflow: visible; background: var(--can
 .upload-workbench {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 160px;
-  align-items: end;
+  align-items: start;
   gap: 12px;
 }
 .upload-workbench .file-group { min-width: 0; }
@@ -795,6 +795,10 @@ main { height: auto; min-height: 100vh; overflow: visible; background: var(--can
   display: grid;
   grid-template-columns: 1fr;
   gap: 7px;
+  position: sticky;
+  top: 12px;
+  align-self: start;
+  margin-top: 27px;
 }
 .action-row.action-side button {
   width: 100%;
@@ -812,8 +816,34 @@ main { height: auto; min-height: 100vh; overflow: visible; background: var(--can
   margin-top: 10px;
 }
 .input-panel .progress-line { grid-column: 1; }
+.upload-workbench .queue-row {
+  min-height: 34px;
+  padding: 7px 0;
+}
+.upload-workbench .queue-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.upload-workbench .queue-file strong {
+  min-width: 0;
+  flex: 1 1 auto;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.upload-workbench .queue-file span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.upload-workbench .status,
+.upload-workbench .remove-button { white-space: nowrap; }
 
 @media (max-width: 680px) {
   .upload-workbench { grid-template-columns: 1fr; }
-  .action-row.action-side { grid-template-columns: 1fr 1fr 1fr; }
+  .action-row.action-side {
+    grid-template-columns: 1fr 1fr 1fr;
+    position: static;
+    margin-top: 0;
+  }
 }
