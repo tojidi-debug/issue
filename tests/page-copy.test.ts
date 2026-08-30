@@ -8,5 +8,7 @@ it("renders the unified independence reconciliation upload", () => {
   expect(html).toContain("독립성 대사");
   expect(html).toContain("파일 첨부");
   expect(html).toContain("사전제출자료와 매출장 대사 후 특이사항 추출");
+  expect(html).not.toContain("INDEPENDENCE REVIEW HUB");
+  expect(html).not.toContain("업무 조회");
   expect(html.match(/type="file"/g)).toHaveLength(1);
 });

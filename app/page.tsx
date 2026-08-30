@@ -356,18 +356,6 @@ export default function Home() {
 
   return (
     <main>
-      <header className="compact-header">
-        <div>
-          <span className="brand-mark" aria-hidden="true">◆</span>
-          <h1>업무 조회</h1>
-          <span>INDEPENDENCE REVIEW HUB</span>
-        </div>
-        <p className="local-note">
-          <span aria-hidden="true" />
-          파일은 브라우저 안에서만 처리됩니다
-        </p>
-      </header>
-
       <div className="workspace">
         <aside className="input-panel">
           <div className="panel-heading">
