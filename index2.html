@@ -3,15 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="사전감리자료와 매출장을 브라우저에서 대사해 독립성 검토 후보를 선별합니다."
-    />
-    <link rel="icon" href="./favicon.svg" />
+    <meta http-equiv="refresh" content="0; url=./" />
+    <link rel="canonical" href="./" />
     <title>감사·인증 독립성 검토</title>
+    <script>
+      const destination = new URL("./", window.location.href);
+      destination.search = window.location.search;
+      destination.hash = window.location.hash;
+      window.location.replace(destination);
+    </script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/pages-entry.tsx"></script>
+    <p><a href="./">감사·인증 독립성 검토 페이지로 이동</a></p>
   </body>
 </html>
