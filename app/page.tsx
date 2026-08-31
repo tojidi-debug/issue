@@ -363,6 +363,9 @@ export default function Home() {
               <h2>독립성 대사</h2>
               <p>사전제출자료와 매출장 대사 후 특이사항 추출</p>
             </div>
+            <a className="package-download" href="./독립성대사.zip" download>
+              독립성대사.zip
+            </a>
           </div>
 
           <div className="upload-workbench">

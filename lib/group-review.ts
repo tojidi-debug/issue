@@ -147,7 +147,10 @@ export function groupReviewCandidates(rows: ReviewCandidate[]): ReviewGroup[] {
         transactionCount: 1, unitAmounts: [row.amount], memos: [row.memo],
       });
     }
-    current.issue = unique([current.issue, row.issue]).join(" / ");
+    current.issue = unique([
+      ...current.issue.split(/\s*\/\s*/),
+      ...row.issue.split(/\s*\/\s*/),
+    ]).join(" / ");
     current.note = unique([current.note, row.note]).join(" ");
     current.attestationEvidence = unique([
       current.attestationEvidence, row.attestationEvidence,
